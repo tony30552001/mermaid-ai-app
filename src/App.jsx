@@ -439,6 +439,22 @@ function MainApp() {
     }
   };
 
+  // --- 重設功能 ---
+  const handleReset = () => {
+    if (window.confirm('確定要清空所有內容並重新開始嗎？目前的描述與圖片將會被移除。')) {
+      setDiagramType('flowchart');
+      setPrompt(INITIAL_PROMPT);
+      setMermaidCode(INITIAL_CODE);
+      setEditInstruction('');
+      setSelectedImage(null);
+      setShowImageUpload(false);
+      setRenderError(null);
+      setScale(1);
+      setPan({ x: 0, y: 0 });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   // --- 生成圖表 ---
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -698,8 +714,15 @@ function MainApp() {
                   className="flex-1 w-full p-4 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none bg-slate-50 leading-relaxed font-mono placeholder:text-slate-400"
                 />
               </div>
-              <div className="mt-4 flex-shrink-0">
-                <button onClick={handleGenerate} disabled={isGenerating || (!prompt.trim() && !selectedImage)} className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-medium transition-all shadow-md hover:shadow-lg ${isGenerating || (!prompt.trim() && !selectedImage) ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]'}`}>
+              <div className="mt-4 flex-shrink-0 flex gap-2">
+                <button
+                  onClick={handleReset}
+                  className="px-4 py-3 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm flex items-center justify-center"
+                  title="重設所有內容"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                </button>
+                <button onClick={handleGenerate} disabled={isGenerating || (!prompt.trim() && !selectedImage)} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-medium transition-all shadow-md hover:shadow-lg ${isGenerating || (!prompt.trim() && !selectedImage) ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]'}`}>
                   {isGenerating ? (<><Loader2 className="w-5 h-5 animate-spin" /> 生成中...</>) : (<><Play className="w-5 h-5 fill-current" /> 生成</>)}
                 </button>
               </div>
