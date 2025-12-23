@@ -443,12 +443,13 @@ function MainApp() {
   const handleReset = () => {
     if (window.confirm('確定要清空所有內容並重新開始嗎？目前的描述與圖片將會被移除。')) {
       setDiagramType('flowchart');
-      setPrompt(INITIAL_PROMPT);
-      setMermaidCode(INITIAL_CODE);
+      setPrompt('');
+      setMermaidCode('');
       setEditInstruction('');
       setSelectedImage(null);
       setShowImageUpload(false);
       setRenderError(null);
+      setSvgContent('');
       setScale(1);
       setPan({ x: 0, y: 0 });
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -542,6 +543,11 @@ function MainApp() {
 
   const renderDiagram = async (code) => {
     if (!window.mermaid) return;
+    if (!code.trim()) {
+      setSvgContent('');
+      setRenderError(null);
+      return;
+    }
     try {
       try { await window.mermaid.parse(code); } catch (e) { throw new Error(e.message || "Mermaid 語法解析失敗"); }
       const id = `mermaid-diagram-${Date.now()}`;
@@ -790,6 +796,14 @@ function MainApp() {
                   <p className="text-sm text-slate-500 mb-4">檢測到 Mermaid 語法錯誤，無法顯示預覽。</p>
                   <div className="w-full bg-slate-50 border border-slate-200 rounded p-3 mb-6 text-left max-h-32 overflow-y-auto"><code className="text-xs font-mono text-red-600 break-all">{renderError}</code></div>
                   <button onClick={handleFix} disabled={isFixing} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200">{isFixing ? <><Loader2 className="w-5 h-5 animate-spin" /> AI 正在修復中...</> : <><Sparkles className="w-5 h-5" /> 一鍵智慧修復</>}</button>
+                </div>
+              ) : !mermaidCode.trim() ? (
+                <div className="m-auto flex flex-col items-center justify-center text-slate-400">
+                  <div className="w-24 h-24 bg-slate-200/50 rounded-full flex items-center justify-center mb-4">
+                    <Layout className="w-10 h-10" />
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-500 mb-1">尚未建立圖表</h3>
+                  <p className="text-sm">請在左側輸入描述或選擇範例開始</p>
                 </div>
               ) : (
                 <div id="print-content" ref={mermaidRef} className="m-auto transition-transform duration-75 ease-linear origin-top-left select-none" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})` }} dangerouslySetInnerHTML={{ __html: svgContent }} />
