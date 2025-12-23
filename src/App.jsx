@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
+import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2, LogIn, LogOut } from 'lucide-react';
+import { useMsal, useIsAuthenticated } from "@azure/msal-react";
+import { loginRequest } from "./authConfig";
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 const aiModel = import.meta.env.VITE_GEMINI_MODEL || "gemini-3.0-flash";
@@ -178,7 +180,71 @@ const INITIAL_CODE = `graph TD
     G -- 失敗 --> K[顯示錯誤訊息]
     K --> E`;
 
-export default function App() {
+function UserProfile() {
+  const { accounts } = useMsal();
+  const name = accounts[0]?.name || "使用者";
+  const username = accounts[0]?.username || "";
+
+  return (
+    <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+      <div className="flex flex-col items-end">
+        <span className="text-sm font-medium text-slate-700">{name}</span>
+        <span className="text-[10px] text-slate-500">{username}</span>
+      </div>
+      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold border border-indigo-200">
+        {name.charAt(0)}
+      </div>
+    </div>
+  );
+}
+
+function SignInButton() {
+  const { instance } = useMsal();
+
+  const handleLogin = () => {
+    instance.loginPopup(loginRequest).catch(e => {
+      console.error(e);
+    });
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+      <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center max-w-md w-full">
+        <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Wand2 className="w-8 h-8 text-indigo-600" />
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Mermaid AI Architect</h1>
+        <p className="text-slate-500 mb-8">請登入以使用 AI 圖表生成工具</p>
+        <button
+          onClick={handleLogin}
+          className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
+        >
+          <LogIn className="w-5 h-5" />
+          使用 Microsoft 帳戶登入
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SignOutButton() {
+  const { instance } = useMsal();
+
+  const handleLogout = () => {
+    instance.logoutPopup({
+      postLogoutRedirectUri: "/",
+      mainWindowRedirectUri: "/"
+    });
+  };
+
+  return (
+    <button onClick={handleLogout} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="登出">
+      <LogOut className="w-4 h-4" />
+    </button>
+  );
+}
+
+function MainApp() {
   const [activeTab, setActiveTab] = useState('generate');
   const [prompt, setPrompt] = useState(INITIAL_PROMPT);
   const [mermaidCode, setMermaidCode] = useState(INITIAL_CODE);
@@ -514,7 +580,11 @@ export default function App() {
           <div className="bg-indigo-600 p-2 rounded-lg"><Wand2 className="w-5 h-5 text-white" /></div>
           <h1 className="text-lg font-bold text-slate-900 tracking-tight">Mermaid AI Architect</h1>
         </div>
-        <a href="https://mermaid.js.org/intro/" target="_blank" rel="noreferrer" className="text-sm text-indigo-600 hover:underline">語法參考</a>
+        <div className="flex items-center gap-4">
+          <a href="https://mermaid.js.org/intro/" target="_blank" rel="noreferrer" className="text-sm text-indigo-600 hover:underline hidden md:block">語法參考</a>
+          <UserProfile />
+          <SignOutButton />
+        </div>
       </header>
 
       <main className="flex-1 overflow-hidden flex flex-col md:flex-row h-full">
@@ -707,4 +777,14 @@ export default function App() {
       </main>
     </div>
   );
+}
+
+export default function App() {
+  const isAuthenticated = useIsAuthenticated();
+
+  if (!isAuthenticated) {
+    return <SignInButton />;
+  }
+
+  return <MainApp />;
 }
