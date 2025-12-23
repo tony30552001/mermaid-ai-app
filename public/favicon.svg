@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#818cf8;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect x="0" y="0" width="128" height="128" rx="32" fill="url(#grad)" />
+  
+  <!-- Graph Nodes and Links -->
+  <g transform="translate(64, 64)" stroke="white" stroke-width="8" stroke-linecap="round">
+    <!-- Links -->
+    <line x1="-30" y1="0" x2="30" y2="-25" opacity="0.8" />
+    <line x1="-30" y1="0" x2="30" y2="25" opacity="0.8" />
+    
+    <!-- Nodes -->
+    <circle cx="-30" cy="0" r="14" fill="white" stroke="none" />
+    <circle cx="30" cy="-25" r="12" fill="white" stroke="none" opacity="0.9" />
+    <circle cx="30" cy="25" r="12" fill="white" stroke="none" opacity="0.9" />
+    
+    <!-- Central AI Sparkle -->
+    <path d="M-8 -40 L0 -50 L8 -40 M0 -50 L0 -30 M-10 -40 L10 -40" stroke="white" stroke-width="3" opacity="0.6" transform="scale(0.8)"/>
+  </g>
+</svg>
