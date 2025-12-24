@@ -6,7 +6,7 @@ import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-const aiModel = import.meta.env.VITE_GEMINI_MODEL || "gemini-3.0-flash";
+const aiModel = import.meta.env.VITE_GEMINI_MODEL || "gemini-1.5-flash";
 
 // --- Constants: Diagram Types ---
 const DIAGRAM_TYPES = [
