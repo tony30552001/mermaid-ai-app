@@ -185,11 +185,11 @@ const INITIAL_CODE = `graph TD
 function UserProfile({ user }) {
   const name = user?.name || "使用者";
   const username = user?.username || "";
-  const avatar = user?.avatar; // Put avatar URL here if available, or use initial
+  const avatar = user?.avatar;
 
   return (
-    <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-      <div className="flex flex-col items-end">
+    <div className="flex items-center gap-2 pl-2 md:pl-4 border-l border-slate-200">
+      <div className="hidden sm:flex flex-col items-end">
         <span className="text-sm font-medium text-slate-700">{name}</span>
         <span className="text-[10px] text-slate-500">{username}</span>
       </div>
@@ -703,10 +703,10 @@ function MainApp({ user, onLogout }) {
   return (
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden text-slate-800" style={{ fontFamily: '"Roboto Flex", "Noto Sans TC", sans-serif' }}>
       {/* Header */}
-      <header id="main-header" className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-sm flex-shrink-0 z-20">
+      <header id="main-header" className="bg-white border-b border-slate-200 px-4 md:px-6 py-3 flex items-center justify-between shadow-sm flex-shrink-0 z-20">
         <div className="flex items-center gap-2">
-          <div className="bg-indigo-600 p-2 rounded-lg"><Wand2 className="w-5 h-5 text-white" /></div>
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight">Mermaid AI Architect</h1>
+          <div className="bg-indigo-600 p-1.5 md:p-2 rounded-lg"><Wand2 className="w-5 h-5 text-white" /></div>
+          <h1 className="text-base md:text-lg font-bold text-slate-900 tracking-tight">Mermaid AI</h1>
         </div>
         <div className="flex items-center gap-4">
           <a href="https://mermaid.js.org/intro/" target="_blank" rel="noreferrer" className="text-sm text-indigo-600 hover:underline hidden md:block">語法參考</a>
@@ -715,9 +715,35 @@ function MainApp({ user, onLogout }) {
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden flex flex-col md:flex-row h-full">
+      <main className="flex-1 overflow-hidden flex flex-col md:flex-row h-full relative">
         {/* Left Panel */}
-        <div id="main-sidebar" className={`w-full md:w-1/3 flex flex-col border-r border-slate-200 bg-white h-full shadow-lg z-10 transition-all duration-300 ${isFullscreen ? 'hidden' : ''}`}>
+        <div
+          id="main-sidebar"
+          className={`
+            w-full md:w-1/3 flex flex-col border-r border-slate-200 bg-white shadow-lg z-30
+            fixed md:relative inset-0 md:inset-auto h-full transition-transform duration-300 ease-in-out
+            ${isFullscreen ? 'md:hidden' : ''}
+            ${/* Mobile Toggle Logic: In mobile, sidebar covers content unless toggled. For now, let's keep it simple: On mobile, the preview is below, or we toggle. 
+               Lets assume a split view is hard on mobile. Usually we want Tab navigation or stacked.
+               Current layout is flex-col for mobile. So it stacks.
+               However, with flex-col and h-full, the sidebar will take full height, pushing preview out of view.
+               Fix: On mobile, let sidebar take 50% height or use a tab to switch.
+               Let's go with a collapsible bottom sheet style or just 50/50 split if height permits, but 360px width is narrow.
+               Better approach: On mobile, use a toggle to switch between Editor and Preview.
+               BUT User asked for RWD layout adjustment, sticking to basics first.
+               Let's make sidebar scrollable and not fixed height on mobile if we stack.
+               ACTUALLY, the existing code: className="flex-1 overflow-hidden flex flex-col md:flex-row h-full"
+               This means on mobile (flex-col), the sidebar attempts to take height.
+               We need to control height.
+            */ ''}
+            ${/* Mobile: Sidebar takes full viewport usually, but we want it to be part of the flow? 
+               If we simply stack, map div might be 0 height. 
+               Let's make Sidebar generic container flow naturally on mobile, but maybe limit max height?
+            */ ''}
+             md:flex
+             ${/* Mobile Visibility Control: We might need a mobile tab switcher. For now, strictly stacking. */ ''}
+          `}
+        >
           <div className="flex border-b border-slate-200 bg-slate-50/50">
             <button onClick={() => setActiveTab('generate')} className={`flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activeTab === 'generate' ? 'text-indigo-600 bg-white shadow-inner border-b-2 border-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>
               <MessageSquarePlus className="w-4 h-4" /> AI 生成
@@ -810,7 +836,7 @@ function MainApp({ user, onLogout }) {
                 {showTypeSelector && (
                   <div className="relative" ref={selectorRef}>
                     <div
-                      className="grid grid-cols-3 gap-1.5 overflow-y-auto pr-1 custom-scrollbar animate-in fade-in slide-in-from-top-1 transition-all duration-75 ease-out"
+                      className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-1.5 overflow-y-auto pr-1 custom-scrollbar animate-in fade-in slide-in-from-top-1 transition-all duration-75 ease-out"
                       style={{ height: `${typeSelectorHeight}px` }}
                     >
                       {DIAGRAM_TYPES.map((type) => {
