@@ -666,7 +666,7 @@ function MainApp({ user, onLogout }) {
 
       <main className="flex-1 overflow-hidden flex flex-col md:flex-row h-full">
         {/* Left Panel */}
-        <div id="main-sidebar" className="w-full md:w-1/3 flex flex-col border-r border-slate-200 bg-white h-full shadow-lg z-10">
+        <div id="main-sidebar" className={`w-full md:w-1/3 flex flex-col border-r border-slate-200 bg-white h-full shadow-lg z-10 transition-all duration-300 ${isFullscreen ? 'hidden' : ''}`}>
           <div className="flex border-b border-slate-200 bg-slate-50/50">
             <button onClick={() => setActiveTab('generate')} className={`flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activeTab === 'generate' ? 'text-indigo-600 bg-white shadow-inner border-b-2 border-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>
               <MessageSquarePlus className="w-4 h-4" /> AI 生成
