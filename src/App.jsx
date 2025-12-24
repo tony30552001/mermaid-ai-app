@@ -735,14 +735,14 @@ function MainApp({ user, onLogout }) {
               <div className="mb-4">
                 <button
                   onClick={() => setShowImageUpload(!showImageUpload)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg border text-sm font-medium transition-all ${showImageUpload ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'}`}
+                  className="w-full flex items-center justify-between py-2 text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors group"
                 >
                   <div className="flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4" />
+                    <ImageIcon className="w-4 h-4 group-hover:text-indigo-600" />
                     <span>圖片轉圖表 (選填)</span>
                     {selectedImage && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full">已上傳</span>}
                   </div>
-                  {showImageUpload ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  {showImageUpload ? <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" /> : <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />}
                 </button>
 
                 {showImageUpload && (
@@ -795,16 +795,16 @@ function MainApp({ user, onLogout }) {
               <div className="mb-4">
                 <button
                   onClick={() => setShowTypeSelector(!showTypeSelector)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg border text-sm font-medium transition-all mb-2 ${showTypeSelector ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'}`}
+                  className="w-full flex items-center justify-between py-2 text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors mb-2 group"
                 >
                   <div className="flex items-center gap-2">
-                    <Layout className="w-4 h-4" />
+                    <Layout className="w-4 h-4 group-hover:text-indigo-600" />
                     <span>選擇圖表類型</span>
                     <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full ml-1">
                       {DIAGRAM_TYPES.find(t => t.id === diagramType)?.label.split(' (')[0]}
                     </span>
                   </div>
-                  {showTypeSelector ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  {showTypeSelector ? <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" /> : <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />}
                 </button>
 
                 {showTypeSelector && (
