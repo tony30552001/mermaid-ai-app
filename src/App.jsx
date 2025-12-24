@@ -358,7 +358,8 @@ function MainApp({ user, onLogout }) {
     }
   }, []);
 
-  const saveToWorkspace = () => {
+  const saveToWorkspace = (e) => {
+    e?.preventDefault(); // 防止可能的表單提交或頁面重整
     const name = window.prompt("請為此圖表命名：", `未命名圖表 ${new Date().toLocaleDateString()}`);
     if (name) {
       const newDiagram = {
@@ -375,7 +376,6 @@ function MainApp({ user, onLogout }) {
         return newSaved;
       });
 
-      alert("儲存成功！前往工作區查看。");
       setActiveTab('workspace'); // Auto switch to workspace
     }
   };
@@ -954,7 +954,7 @@ function MainApp({ user, onLogout }) {
               <div className="flex items-center justify-between mb-2 flex-shrink-0">
                 <label className="text-sm font-medium text-slate-700">Mermaid Source Code</label>
                 <div className="flex items-center gap-2">
-                  <button onClick={saveToWorkspace} className="text-xs flex items-center gap-1 px-2 py-1 rounded hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors" title="儲存到工作區"><Save className="w-3 h-3" /> 儲存</button>
+                  <button type="button" onClick={saveToWorkspace} className="text-xs flex items-center gap-1 px-2 py-1 rounded hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors" title="儲存到工作區"><Save className="w-3 h-3" /> 儲存</button>
                   <button onClick={copyToClipboard} className="text-xs flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 text-slate-500 hover:text-indigo-600 transition-colors">{isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />} {isCopied ? "已複製" : "複製"}</button>
                 </div>
               </div>
