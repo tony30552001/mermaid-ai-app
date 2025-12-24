@@ -356,11 +356,11 @@ function MainApp({ user, onLogout }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // 互動狀態：平移 (Pan)
-  const [isPanningTool, setIsPanningTool] = useState(true); // Default to true
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanDragging, setIsPanDragging] = useState(false);
 
-  const mermaidRef = useRef(null);
+  // Mobile View State
+  const [isMobilePreview, setIsMobilePreview] = useState(false);
   const containerRef = useRef(null);
 
   // --- 初始化 Mermaid ---
@@ -574,6 +574,8 @@ function MainApp({ user, onLogout }) {
       setRenderError(`生成失敗: ${errorMsg}`);
     } finally {
       setIsGenerating(false);
+      // Mobile: Switch to preview after generation
+      if (window.innerWidth < 768) setIsMobilePreview(true);
     }
   };
 
@@ -601,6 +603,8 @@ function MainApp({ user, onLogout }) {
       console.error(e);
     } finally {
       setIsFixing(false);
+      // Mobile: Switch to preview after fix
+      if (window.innerWidth < 768) setIsMobilePreview(true);
     }
   };
 
@@ -978,6 +982,15 @@ function MainApp({ user, onLogout }) {
           </div>
         </div>
       </main>
+
+      {/* Mobile Floating Action Button for View Toggle */}
+      <button
+        onClick={() => setIsMobilePreview(!isMobilePreview)}
+        className="md:hidden fixed bottom-6 right-6 z-50 bg-indigo-600 text-white p-4 rounded-full shadow-xl hover:bg-indigo-700 transition-all active:scale-95"
+        title={isMobilePreview ? "回到編輯" : "預覽圖表"}
+      >
+        {isMobilePreview ? <PenTool className="w-6 h-6" /> : <ImageIcon className="w-6 h-6" />}
+      </button>
     </div>
   );
 }
