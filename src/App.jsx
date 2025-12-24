@@ -1008,7 +1008,12 @@ function MainApp({ user, onLogout }) {
                             </div>
                             <div>
                               <h4 className="font-semibold text-slate-800 line-clamp-1">{diagram.name}</h4>
-                              <span className="text-xs text-slate-500">{new Date(diagram.updatedAt).toLocaleString()}</span>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 font-medium">
+                                  {DIAGRAM_TYPES.find(t => t.id === diagram.type)?.label.split(' (')[0] || diagram.type}
+                                </span>
+                                <span className="text-[10px] text-slate-400">{new Date(diagram.updatedAt).toLocaleString()}</span>
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
