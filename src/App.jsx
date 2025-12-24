@@ -310,6 +310,9 @@ function MainApp({ user, onLogout }) {
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const fileInputRef = useRef(null);
 
+  // 圖表類型選單狀態
+  const [showTypeSelector, setShowTypeSelector] = useState(true);
+
   // 風格狀態
   const [theme, setTheme] = useState('default');
   const [showThemeMenu, setShowThemeMenu] = useState(false);
@@ -765,28 +768,42 @@ function MainApp({ user, onLogout }) {
               </div>
 
               {/* Diagram Type Selector */}
+              {/* Diagram Type Selector */}
               <div className="mb-4">
-                <label className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                  <Layout className="w-4 h-4" /> 選擇圖表類型
-                </label>
-                <div className="grid grid-cols-3 gap-1.5 max-h-[100px] overflow-y-auto pr-1 custom-scrollbar">
-                  {DIAGRAM_TYPES.map((type) => {
-                    const Icon = type.icon;
-                    return (
-                      <button
-                        key={type.id}
-                        onClick={() => handleTypeSelect(type.id)}
-                        className={`flex flex-col items-center justify-center gap-1 p-2 rounded-md border text-[10px] font-medium transition-all text-center
+                <button
+                  onClick={() => setShowTypeSelector(!showTypeSelector)}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg border text-sm font-medium transition-all mb-2 ${showTypeSelector ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Layout className="w-4 h-4" />
+                    <span>選擇圖表類型</span>
+                    <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full ml-1">
+                      {DIAGRAM_TYPES.find(t => t.id === diagramType)?.label.split(' (')[0]}
+                    </span>
+                  </div>
+                  {showTypeSelector ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </button>
+
+                {showTypeSelector && (
+                  <div className="grid grid-cols-3 gap-1.5 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar animate-in fade-in slide-in-from-top-1">
+                    {DIAGRAM_TYPES.map((type) => {
+                      const Icon = type.icon;
+                      return (
+                        <button
+                          key={type.id}
+                          onClick={() => handleTypeSelect(type.id)}
+                          className={`flex flex-col items-center justify-center gap-1 p-2 rounded-md border text-[10px] font-medium transition-all text-center
                           ${diagramType === type.id
-                            ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm'
-                            : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
-                      >
-                        <Icon className="w-4 h-4 shrink-0" />
-                        <span className="truncate w-full">{type.label.split(' (')[0]}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                              ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm'
+                              : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" />
+                          <span className="truncate w-full">{type.label.split(' (')[0]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 flex flex-col min-h-0 border-t border-slate-100 pt-4">
