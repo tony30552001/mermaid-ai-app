@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2, LogIn, LogOut } from 'lucide-react';
+import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2, LogIn, LogOut, Maximize2, Minimize2 } from 'lucide-react';
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { loginRequest } from "./authConfig";
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
@@ -327,9 +327,10 @@ function MainApp({ user, onLogout }) {
   const [scale, setScale] = useState(1);
   const [zoomInput, setZoomInput] = useState('100');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // 互動狀態：平移 (Pan)
-  const [isPanningTool, setIsPanningTool] = useState(false);
+  const [isPanningTool, setIsPanningTool] = useState(true); // Default to true
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanDragging, setIsPanDragging] = useState(false);
 
@@ -817,8 +818,11 @@ function MainApp({ user, onLogout }) {
         </div>
 
         {/* Right Panel: Preview */}
-        <div className="w-full md:w-2/3 bg-slate-100 relative overflow-hidden flex flex-col h-full" id="print-container" ref={containerRef}>
+        <div className={`w-full ${isFullscreen ? 'fixed inset-0 z-50' : 'md:w-2/3'} bg-slate-100 relative overflow-hidden flex flex-col h-full transition-all duration-300`} id="print-container" ref={containerRef}>
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10 pointer-events-none">
+            <button onClick={() => setIsFullscreen(!isFullscreen)} className="pointer-events-auto bg-white/90 backdrop-blur shadow-sm border border-slate-200 text-slate-700 hover:text-indigo-600 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2" title={isFullscreen ? "退出全螢幕" : "全螢幕預覽"}>
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
             <button onClick={() => setIsPanningTool(!isPanningTool)} className={`pointer-events-auto backdrop-blur shadow-sm border px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${isPanningTool ? 'bg-indigo-50 border-indigo-200 text-indigo-600 ring-2 ring-indigo-100' : 'bg-white/90 border-slate-200 text-slate-700 hover:text-indigo-600'}`} title="抓手模式"><Hand className="w-4 h-4" /></button>
             <div className="relative pointer-events-auto theme-menu-container">
               <button onClick={() => setShowThemeMenu(!showThemeMenu)} className="bg-white/90 backdrop-blur shadow-sm border border-slate-200 text-slate-700 hover:text-indigo-600 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2"><Palette className="w-4 h-4" /><ChevronDown className={`w-3 h-3 transition-transform ${showThemeMenu ? 'rotate-180' : ''}`} /></button>
