@@ -356,14 +356,14 @@ function MainApp({ user, onLogout }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // 互動狀態：平移 (Pan)
+  const [isPanningTool, setIsPanningTool] = useState(true);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanDragging, setIsPanDragging] = useState(false);
 
   // Mobile View State
   const [isMobilePreview, setIsMobilePreview] = useState(false);
   const containerRef = useRef(null);
-
-  // --- 初始化 Mermaid ---
+  const mermaidRef = useRef(null);
   useEffect(() => {
     const script = document.createElement('script');
     // 更新為 11.4.0 以支援 architecture-beta
