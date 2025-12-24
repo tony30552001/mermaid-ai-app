@@ -970,6 +970,53 @@ function MainApp({ user, onLogout }) {
                 </div>
               )}
             </div>
+
+            {/* Workspace Tab */}
+            <div className={`absolute inset-0 flex flex-col p-4 transition-opacity duration-200 overflow-y-auto ${activeTab === 'workspace' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+              <div className="mb-4">
+                <h3 className="text-lg font-bold text-slate-800 mb-1">我的工作區</h3>
+                <p className="text-sm text-slate-500">儲存並管理您的 Mermaid圖表</p>
+              </div>
+
+              {savedDiagrams.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 border-2 border-dashed border-slate-200 rounded-lg">
+                  <FolderOpen className="w-12 h-12 mb-2 opacity-50" />
+                  <p className="text-sm">目前沒有儲存的圖表</p>
+                  <button onClick={() => setActiveTab('edit')} className="mt-4 text-indigo-600 text-sm hover:underline">去儲存目前的圖表</button>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {savedDiagrams.map((diagram) => {
+                    const TypeIcon = DIAGRAM_TYPES.find(t => t.id === diagram.type)?.icon || FileCode;
+                    return (
+                      <div key={diagram.id} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow group relative">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 bg-indigo-50 rounded-md text-indigo-600">
+                              <TypeIcon className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-slate-800 line-clamp-1">{diagram.name}</h4>
+                              <span className="text-xs text-slate-500">{new Date(diagram.updatedAt).toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <button onClick={() => deleteFromWorkspace(diagram.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="刪除">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="bg-slate-50 p-2 rounded border border-slate-100 mb-3 h-20 overflow-hidden relative">
+                          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-50/90 pointer-events-none"></div>
+                          <code className="text-[10px] text-slate-600 font-mono whitespace-pre-wrap">{diagram.code}</code>
+                        </div>
+                        <button onClick={() => loadFromWorkspace(diagram)} className="w-full py-2 bg-indigo-50 text-indigo-700 font-medium rounded-md hover:bg-indigo-100 transition-colors text-sm">
+                          載入此圖表
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
