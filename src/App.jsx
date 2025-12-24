@@ -312,6 +312,29 @@ function MainApp({ user, onLogout }) {
 
   // 圖表類型選單狀態
   const [showTypeSelector, setShowTypeSelector] = useState(true);
+  const [typeSelectorHeight, setTypeSelectorHeight] = useState(120);
+  const [isResizingSelector, setIsResizingSelector] = useState(false);
+  const selectorRef = useRef(null);
+
+  useEffect(() => {
+    const handleMouseUp = () => setIsResizingSelector(false);
+    const handleMouseMove = (e) => {
+      if (isResizingSelector) {
+        const newHeight = e.clientY - selectorRef.current.getBoundingClientRect().top;
+        setTypeSelectorHeight(Math.max(60, Math.min(400, newHeight)));
+      }
+    };
+
+    if (isResizingSelector) {
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleMouseMove);
+    }
+
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [isResizingSelector]);
 
   // 風格狀態
   const [theme, setTheme] = useState('default');
@@ -785,23 +808,35 @@ function MainApp({ user, onLogout }) {
                 </button>
 
                 {showTypeSelector && (
-                  <div className="grid grid-cols-3 gap-1.5 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar animate-in fade-in slide-in-from-top-1">
-                    {DIAGRAM_TYPES.map((type) => {
-                      const Icon = type.icon;
-                      return (
-                        <button
-                          key={type.id}
-                          onClick={() => handleTypeSelect(type.id)}
-                          className={`flex flex-col items-center justify-center gap-1 p-2 rounded-md border text-[10px] font-medium transition-all text-center
-                          ${diagramType === type.id
-                              ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm'
-                              : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
-                        >
-                          <Icon className="w-4 h-4 shrink-0" />
-                          <span className="truncate w-full">{type.label.split(' (')[0]}</span>
-                        </button>
-                      );
-                    })}
+                  <div className="relative" ref={selectorRef}>
+                    <div
+                      className="grid grid-cols-3 gap-1.5 overflow-y-auto pr-1 custom-scrollbar animate-in fade-in slide-in-from-top-1 transition-all duration-75 ease-out"
+                      style={{ height: `${typeSelectorHeight}px` }}
+                    >
+                      {DIAGRAM_TYPES.map((type) => {
+                        const Icon = type.icon;
+                        return (
+                          <button
+                            key={type.id}
+                            onClick={() => handleTypeSelect(type.id)}
+                            className={`flex flex-col items-center justify-center gap-1 p-2 rounded-md border text-[10px] font-medium transition-all text-center
+                            ${diagramType === type.id
+                                ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm'
+                                : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
+                          >
+                            <Icon className="w-4 h-4 shrink-0" />
+                            <span className="truncate w-full">{type.label.split(' (')[0]}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Resize Handle */}
+                    <div
+                      className="w-full h-4 cursor-ns-resize flex items-center justify-center hover:bg-slate-100 transition-colors rounded-b-md"
+                      onMouseDown={(e) => { e.preventDefault(); setIsResizingSelector(true); }}
+                    >
+                      <div className="w-12 h-1 bg-slate-300 rounded-full" />
+                    </div>
                   </div>
                 )}
               </div>
