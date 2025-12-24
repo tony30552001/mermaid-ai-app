@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2, LogIn, LogOut, Maximize2, Minimize2, Save, FolderOpen } from 'lucide-react';
+import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2, LogIn, LogOut, Maximize2, Minimize2, Save, FolderOpen, Edit2 } from 'lucide-react';
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { loginRequest } from "./authConfig";
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
@@ -396,6 +396,17 @@ function MainApp({ user, onLogout }) {
       const newSaved = savedDiagrams.filter(d => d.id !== id);
       setSavedDiagrams(newSaved);
       localStorage.setItem('mermaid_workspace', JSON.stringify(newSaved));
+    }
+  };
+
+  const renameInWorkspace = (id, oldName) => {
+    const newName = window.prompt("請輸入新的圖表名稱：", oldName);
+    if (newName && newName !== oldName) {
+      setSavedDiagrams(prev => {
+        const newSaved = prev.map(d => d.id === id ? { ...d, name: newName, updatedAt: new Date().toISOString() } : d);
+        localStorage.setItem('mermaid_workspace', JSON.stringify(newSaved));
+        return newSaved;
+      });
     }
   };
 
@@ -1000,9 +1011,14 @@ function MainApp({ user, onLogout }) {
                               <span className="text-xs text-slate-500">{new Date(diagram.updatedAt).toLocaleString()}</span>
                             </div>
                           </div>
-                          <button onClick={() => deleteFromWorkspace(diagram.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="刪除">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => renameInWorkspace(diagram.id, diagram.name)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="重新命名">
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => deleteFromWorkspace(diagram.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="刪除">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                         <div className="bg-slate-50 p-2 rounded border border-slate-100 mb-3 h-20 overflow-hidden relative">
                           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-50/90 pointer-events-none"></div>
@@ -1081,17 +1097,18 @@ function MainApp({ user, onLogout }) {
             </div>
           </div>
         </div>
-      </main>
+      </main >
 
       {/* Mobile Floating Action Button for View Toggle */}
-      <button
-        onClick={() => setIsMobilePreview(!isMobilePreview)}
+      < button
+        onClick={() => setIsMobilePreview(!isMobilePreview)
+        }
         className="md:hidden fixed bottom-6 right-6 z-50 bg-indigo-600 text-white p-4 rounded-full shadow-xl hover:bg-indigo-700 transition-all active:scale-95"
         title={isMobilePreview ? "回到編輯" : "預覽圖表"}
       >
         {isMobilePreview ? <PenTool className="w-6 h-6" /> : <ImageIcon className="w-6 h-6" />}
-      </button>
-    </div>
+      </button >
+    </div >
   );
 }
 
