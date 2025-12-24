@@ -645,9 +645,10 @@ function MainApp({ user, onLogout }) {
     const onWheel = (e) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        const delta = e.deltaY * -0.01;
+        const direction = e.deltaY > 0 ? -1 : 1;
+        const zoomStep = 0.3;
         setScale(prevScale => {
-          const newScale = Math.min(5, Math.max(0.1, prevScale + delta));
+          const newScale = Math.min(5, Math.max(0.1, prevScale + (direction * zoomStep)));
           return parseFloat(newScale.toFixed(2));
         });
       }
