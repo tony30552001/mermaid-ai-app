@@ -601,8 +601,10 @@ function MainApp({ user, onLogout }) {
     2. 請務必${selectedTypeInfo.prompt} 開頭。
     3. 只回傳 Code，不包含解釋。不要使用 markdown code block 符號。
     4. 【完整性】確保生成的代碼包含完整的流程，不要遺漏步驟。
-    5. 確保中文 ID 處理正確 (例如使用 id["中文名稱"])。
-    6. 若是心智圖(mindmap)或甘特圖(gantt)，請確保縮排格式正確。`;
+    5. 【節點 ID 規範】使用簡單的英文數字作為 ID (如 node1, A, B)，必免使用中文或特殊符號作為 ID。將顯示文字放在括號內，例如 node1["中文顯示文字"]。
+    6. 【字元轉義】顯示文字若包含標點符號，請務必使用雙引號包覆，例如 id["Text (with) brackets"]。
+    7. 【禁用語法】不要使用 click 事件，避免過於深層的 subgraph 嵌套。
+    8. 若是心智圖(mindmap)或甘特圖(gantt)，請確保縮排格式正確。`;
 
     try {
       let code = await callGemini(systemPrompt, prompt);
@@ -642,7 +644,8 @@ function MainApp({ user, onLogout }) {
     1. 必須維持原本的圖表類型：【${selectedTypeInfo.label}】。
     2. 請務必${selectedTypeInfo.prompt} 開頭或使用相關語法。
     3. 針對報錯訊息進行修復，若語法不支援該圖表類型，請改寫為該類型支援的語法。
-    4. 只回傳 Code，不包含解釋。`;
+    4. 【節點 ID 與轉義】確保 ID 為英文數字，中文顯示文字必須用雙引號包起來，例如 A["中文內容"]。
+    5. 只回傳 Code，不包含解釋。`;
 
     const userMessage = `目前代碼：\n${mermaidCode}\n\n錯誤訊息：\n${renderError}`;
     try {
@@ -661,7 +664,10 @@ function MainApp({ user, onLogout }) {
   const handleAiEdit = async () => {
     if (!editInstruction.trim()) return;
     setIsAiEditing(true);
-    const systemPrompt = `你是一個 Mermaid.js 編輯助手。請根據指令修改代碼。只回傳代碼。`;
+    const systemPrompt = `你是一個 Mermaid.js 編輯助手。請根據指令修改代碼。只回傳代碼。
+    規則：
+    1. 保持 ID 為簡單英文數字，顯示內容用雙引號包覆。
+    2. 確保語法正確性，避免不支援的特殊符號。`;
     const userMessage = `原始代碼：\n${mermaidCode}\n\n指令：\n${editInstruction}`;
     try {
       let code = await callGemini(systemPrompt, userMessage);
