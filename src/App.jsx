@@ -637,16 +637,28 @@ function MainApp({ user, onLogout }) {
   const handleCanvasMouseLeave = () => setIsPanDragging(false);
 
   // Wheel Zoom Logic
-  const handleWheel = (e) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const delta = e.deltaY * -0.01;
-      setScale(prevScale => {
-        const newScale = Math.min(5, Math.max(0.1, prevScale + delta));
-        return parseFloat(newScale.toFixed(2));
-      });
-    }
-  };
+  // Wheel Zoom Logic (Native Event Handler for better control)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const onWheel = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY * -0.01;
+        setScale(prevScale => {
+          const newScale = Math.min(5, Math.max(0.1, prevScale + delta));
+          return parseFloat(newScale.toFixed(2));
+        });
+      }
+    };
+
+    container.addEventListener('wheel', onWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', onWheel);
+    };
+  }, []);
 
   // Download Functions
   const downloadSVG = () => { if (!svgContent) return; const blob = new Blob([svgContent], { type: 'image/svg+xml' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'diagram.svg'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); setShowExportMenu(false); };
@@ -834,7 +846,7 @@ function MainApp({ user, onLogout }) {
           className={`w-full ${isFullscreen ? 'fixed inset-0 z-50' : 'md:w-2/3'} bg-slate-100 relative overflow-hidden flex flex-col h-full transition-all duration-300`}
           id="print-container"
           ref={containerRef}
-          onWheel={handleWheel}
+          onWheel={undefined} // Handled by useEffect
         >
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10 pointer-events-none">
             <button onClick={() => setIsFullscreen(!isFullscreen)} className="pointer-events-auto bg-white/90 backdrop-blur shadow-sm border border-slate-200 text-slate-700 hover:text-indigo-600 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2" title={isFullscreen ? "退出全螢幕" : "全螢幕預覽"}>
