@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2, LogIn, LogOut, Maximize2, Minimize2 } from 'lucide-react';
+import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2, LogIn, LogOut, Maximize2, Minimize2, Save, FolderOpen } from 'lucide-react';
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { loginRequest } from "./authConfig";
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
@@ -343,6 +343,56 @@ function MainApp({ user, onLogout }) {
   // AI 編輯指令狀態
   const [editInstruction, setEditInstruction] = useState('');
   const [isAiEditing, setIsAiEditing] = useState(false);
+
+  // 工作區狀態 (Workspace)
+  const [savedDiagrams, setSavedDiagrams] = useState([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('mermaid_workspace');
+    if (saved) {
+      try {
+        setSavedDiagrams(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse workspace data", e);
+      }
+    }
+  }, []);
+
+  const saveToWorkspace = () => {
+    const name = window.prompt("請為此圖表命名：", `未命名圖表 ${new Date().toLocaleDateString()}`);
+    if (name) {
+      const newDiagram = {
+        id: Date.now(),
+        name,
+        code: mermaidCode,
+        type: diagramType,
+        updatedAt: new Date().toISOString()
+      };
+      const newSaved = [newDiagram, ...savedDiagrams];
+      setSavedDiagrams(newSaved);
+      localStorage.setItem('mermaid_workspace', JSON.stringify(newSaved));
+      alert("儲存成功！");
+    }
+  };
+
+  const loadFromWorkspace = (diagram) => {
+    if (window.confirm(`確定要載入「${diagram.name}」嗎？目前的內容將被覆蓋。`)) {
+      setMermaidCode(diagram.code);
+      setDiagramType(diagram.type || 'flowchart');
+      setPrompt('');
+      setActiveTab('edit');
+      // If mobile, switch to preview or remain in edit? Maybe edit to see code first.
+      if (window.innerWidth < 768) setIsMobilePreview(false);
+    }
+  };
+
+  const deleteFromWorkspace = (id) => {
+    if (window.confirm("確定要刪除此圖表嗎？此動作無法復原。")) {
+      const newSaved = savedDiagrams.filter(d => d.id !== id);
+      setSavedDiagrams(newSaved);
+      localStorage.setItem('mermaid_workspace', JSON.stringify(newSaved));
+    }
+  };
 
   // 狀態管理
   const [isGenerating, setIsGenerating] = useState(false);
@@ -737,6 +787,9 @@ function MainApp({ user, onLogout }) {
             <button onClick={() => setActiveTab('edit')} className={`flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activeTab === 'edit' ? 'text-indigo-600 bg-white shadow-inner border-b-2 border-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>
               <Code className="w-4 h-4" /> 程式碼編輯 {renderError && <span className="w-2 h-2 rounded-full bg-red-500 ml-1 animate-pulse" />}
             </button>
+            <button onClick={() => setActiveTab('workspace')} className={`flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activeTab === 'workspace' ? 'text-indigo-600 bg-white shadow-inner border-b-2 border-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>
+              <FolderOpen className="w-4 h-4" /> 工作區
+            </button>
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col relative">
@@ -889,7 +942,10 @@ function MainApp({ user, onLogout }) {
               </div>
               <div className="flex items-center justify-between mb-2 flex-shrink-0">
                 <label className="text-sm font-medium text-slate-700">Mermaid Source Code</label>
-                <button onClick={copyToClipboard} className="text-xs flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 text-slate-500 hover:text-indigo-600 transition-colors">{isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />} {isCopied ? "已複製" : "複製"}</button>
+                <div className="flex items-center gap-2">
+                  <button onClick={saveToWorkspace} className="text-xs flex items-center gap-1 px-2 py-1 rounded hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors" title="儲存到工作區"><Save className="w-3 h-3" /> 儲存</button>
+                  <button onClick={copyToClipboard} className="text-xs flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 text-slate-500 hover:text-indigo-600 transition-colors">{isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />} {isCopied ? "已複製" : "複製"}</button>
+                </div>
               </div>
               <div className="flex-1 relative min-h-0 border rounded-lg overflow-hidden shadow-inner">
                 <textarea value={mermaidCode} onChange={(e) => setMermaidCode(e.target.value)} className="absolute inset-0 w-full h-full p-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset resize-none bg-slate-900 text-slate-100" spellCheck="false" />
