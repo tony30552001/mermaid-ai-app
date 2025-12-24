@@ -724,28 +724,10 @@ function MainApp({ user, onLogout }) {
         <div
           id="main-sidebar"
           className={`
-            w-full md:w-1/3 flex flex-col border-r border-slate-200 bg-white shadow-lg z-30
+            md:w-1/3 flex flex-col border-r border-slate-200 bg-white shadow-lg z-30
             fixed md:relative inset-0 md:inset-auto h-full transition-transform duration-300 ease-in-out
             ${isFullscreen ? 'md:hidden' : ''}
-            ${/* Mobile Toggle Logic: In mobile, sidebar covers content unless toggled. For now, let's keep it simple: On mobile, the preview is below, or we toggle. 
-               Lets assume a split view is hard on mobile. Usually we want Tab navigation or stacked.
-               Current layout is flex-col for mobile. So it stacks.
-               However, with flex-col and h-full, the sidebar will take full height, pushing preview out of view.
-               Fix: On mobile, let sidebar take 50% height or use a tab to switch.
-               Let's go with a collapsible bottom sheet style or just 50/50 split if height permits, but 360px width is narrow.
-               Better approach: On mobile, use a toggle to switch between Editor and Preview.
-               BUT User asked for RWD layout adjustment, sticking to basics first.
-               Let's make sidebar scrollable and not fixed height on mobile if we stack.
-               ACTUALLY, the existing code: className="flex-1 overflow-hidden flex flex-col md:flex-row h-full"
-               This means on mobile (flex-col), the sidebar attempts to take height.
-               We need to control height.
-            */ ''}
-            ${/* Mobile: Sidebar takes full viewport usually, but we want it to be part of the flow? 
-               If we simply stack, map div might be 0 height. 
-               Let's make Sidebar generic container flow naturally on mobile, but maybe limit max height?
-            */ ''}
-             md:flex
-             ${/* Mobile Visibility Control: We might need a mobile tab switcher. For now, strictly stacking. */ ''}
+            ${isMobilePreview ? 'hidden md:flex' : 'flex w-full'}
           `}
         >
           <div className="flex border-b border-slate-200 bg-slate-50/50">
@@ -926,7 +908,11 @@ function MainApp({ user, onLogout }) {
 
         {/* Right Panel: Preview */}
         <div
-          className={`w-full ${isFullscreen ? 'fixed inset-0 z-50' : 'md:w-2/3'} bg-slate-100 relative overflow-hidden flex flex-col h-full transition-all duration-300`}
+          className={`
+            bg-slate-100 relative overflow-hidden flex-col h-full transition-all duration-300
+            ${isFullscreen ? 'fixed inset-0 z-50' : 'md:w-2/3'}
+            ${isMobilePreview ? 'flex w-full fixed inset-0 z-20 md:static md:z-auto' : 'hidden md:flex'}
+          `}
           id="print-container"
           ref={containerRef}
           onWheel={undefined} // Handled by useEffect
