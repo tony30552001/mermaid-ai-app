@@ -646,7 +646,7 @@ function MainApp({ user, onLogout }) {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         const direction = e.deltaY > 0 ? -1 : 1;
-        const zoomStep = 0.3;
+        const zoomStep = 0.2;
         setScale(prevScale => {
           const newScale = Math.min(5, Math.max(0.1, prevScale + (direction * zoomStep)));
           return parseFloat(newScale.toFixed(2));
