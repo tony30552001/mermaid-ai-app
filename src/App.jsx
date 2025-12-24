@@ -368,10 +368,15 @@ function MainApp({ user, onLogout }) {
         type: diagramType,
         updatedAt: new Date().toISOString()
       };
-      const newSaved = [newDiagram, ...savedDiagrams];
-      setSavedDiagrams(newSaved);
-      localStorage.setItem('mermaid_workspace', JSON.stringify(newSaved));
-      alert("儲存成功！");
+
+      setSavedDiagrams(prev => {
+        const newSaved = [newDiagram, ...prev];
+        localStorage.setItem('mermaid_workspace', JSON.stringify(newSaved));
+        return newSaved;
+      });
+
+      alert("儲存成功！前往工作區查看。");
+      setActiveTab('workspace'); // Auto switch to workspace
     }
   };
 
