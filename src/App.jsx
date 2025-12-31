@@ -770,13 +770,77 @@ function MainApp({ user, onLogout }) {
   // Download Functions
   const downloadSVG = () => { if (!svgContent) return; const blob = new Blob([svgContent], { type: 'image/svg+xml' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'diagram.svg'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); setShowExportMenu(false); };
   const downloadImage = (fmt) => {
-    if (!svgContent || !mermaidRef.current) return; const svgEl = mermaidRef.current.querySelector('svg'); if (!svgEl) return;
-    const bbox = svgEl.getBBox(); const w = bbox.width; const h = bbox.height; const cloned = svgEl.cloneNode(true); cloned.setAttribute('width', w); cloned.setAttribute('height', h); cloned.style.backgroundColor = theme === 'dark' ? '#0f172a' : '#ffffff';
-    const svgStr = new XMLSerializer().serializeToString(cloned); const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' }); const url = URL.createObjectURL(blob); const img = new Image();
-    img.onload = () => {
-      const cvs = document.createElement('canvas'); cvs.width = w * 3; cvs.height = h * 3; const ctx = cvs.getContext('2d'); ctx.fillStyle = theme === 'dark' ? '#0f172a' : '#ffffff'; ctx.fillRect(0, 0, cvs.width, cvs.height); ctx.scale(3, 3); ctx.drawImage(img, 0, 0, w, h);
-      const a = document.createElement('a'); a.href = cvs.toDataURL(`image/${fmt}`); a.download = `diagram.${fmt}`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); setShowExportMenu(false);
-    }; img.src = url;
+    if (!svgContent || !mermaidRef.current) return;
+    const svgEl = mermaidRef.current.querySelector('svg');
+    if (!svgEl) return;
+
+    try {
+      // 1. Get exact content bounds
+      const bbox = svgEl.getBBox();
+      const w = bbox.width;
+      const h = bbox.height;
+
+      // 2. Clone and configure SVG for export
+      const cloned = svgEl.cloneNode(true);
+
+      // Critical: Set viewBox to match content bounds to ensure no cropping
+      cloned.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+      cloned.setAttribute('width', w);
+      cloned.setAttribute('height', h);
+
+      // Apply theme background
+      const bgColor = theme === 'dark' ? '#0f172a' : '#ffffff';
+      cloned.style.backgroundColor = bgColor;
+
+      // 3. Convert to Blob URL
+      const svgStr = new XMLSerializer().serializeToString(cloned);
+      const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+
+      // 4. Draw to Canvas
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const scale = 2; // Export at 2x resolution
+          const cvs = document.createElement('canvas');
+          cvs.width = Math.ceil(w * scale);
+          cvs.height = Math.ceil(h * scale);
+          const ctx = cvs.getContext('2d');
+
+          // Fill Background
+          ctx.fillStyle = bgColor;
+          ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+          // Draw Image
+          ctx.drawImage(img, 0, 0, cvs.width, cvs.height);
+
+          // Download
+          const a = document.createElement('a');
+          a.href = cvs.toDataURL(`image/${fmt}`, 0.9);
+          a.download = `mermaid-diagram-${Date.now()}.${fmt}`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setShowExportMenu(false);
+        } catch (err) {
+          console.error('Canvas export error:', err);
+          alert('匯出失敗，可能是瀏覽器安全性限制或圖表過大。');
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      };
+
+      img.onerror = (e) => {
+        console.error('Image load error:', e);
+        URL.revokeObjectURL(url);
+        alert('圖片轉換失敗。');
+      };
+
+      img.src = url;
+    } catch (e) {
+      console.error('Export setup error:', e);
+      alert('準備匯出時發生錯誤。');
+    }
   };
   const copyToClipboard = () => { const ta = document.createElement("textarea"); ta.value = mermaidCode; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); };
 
