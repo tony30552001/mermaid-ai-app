@@ -523,6 +523,10 @@ function MainApp({ user, onLogout }) {
         });
       }
 
+      if (!apiKey) {
+        throw new Error("未設定 Gemini API Key。請檢查環境變數 VITE_GEMINI_API_KEY。");
+      }
+
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`,
         {
