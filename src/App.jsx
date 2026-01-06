@@ -1260,8 +1260,10 @@ function MainApp({ user, onLogout }) {
         <div
           className={`
             bg-slate-100 relative overflow-hidden flex-col h-full transition-all duration-300
-            ${isFullscreen ? 'fixed inset-0 z-50' : 'md:w-2/3'}
-            ${isMobilePreview ? 'flex w-full fixed inset-0 z-20 md:static md:z-auto' : 'hidden md:flex'}
+            ${isFullscreen
+              ? 'fixed inset-0 z-50 flex'
+              : `md:w-2/3 ${isMobilePreview ? 'flex w-full fixed inset-0 z-20 md:static md:z-auto' : 'hidden md:flex'}`
+            }
           `}
           id="print-container"
           ref={containerRef}
