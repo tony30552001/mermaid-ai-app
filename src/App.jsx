@@ -418,6 +418,7 @@ function MainApp({ user, onLogout }) {
   const [isCopied, setIsCopied] = useState(false);
   const [scale, setScale] = useState(1);
   const [zoomInput, setZoomInput] = useState('100');
+  const [isExporting, setIsExporting] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -767,12 +768,60 @@ function MainApp({ user, onLogout }) {
     };
   }, []);
 
+  // --- AI 產生圖表標題 ---
+  const generateDiagramTitle = async () => {
+    if (!mermaidCode.trim()) return 'mermaid-diagram';
+    try {
+      const systemPrompt = `你是一個檔案命名專家。請根據 Mermaid 圖表代碼，產生一個簡短貼切的標題作為檔名。
+規則：
+1. 使用繁體中文
+2. 最多 8 個字
+3. 要能概括圖表的核心主題
+4. 不要使用標點符號或特殊字元
+5. 只回傳標題文字，不要任何解釋`;
+      const title = await callGemini(systemPrompt, mermaidCode);
+      // 清理標題：移除換行、空白、特殊字元
+      const cleanTitle = title.trim()
+        .replace(/[\n\r]/g, '')
+        .replace(/[\\/:*?"<>|]/g, '')
+        .substring(0, 20);
+      return cleanTitle || 'mermaid-diagram';
+    } catch (e) {
+      console.warn('AI 標題產生失敗，使用預設檔名', e);
+      return 'mermaid-diagram';
+    }
+  };
+
   // Download Functions
-  const downloadSVG = () => { if (!svgContent) return; const blob = new Blob([svgContent], { type: 'image/svg+xml' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'diagram.svg'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); setShowExportMenu(false); };
-  const downloadImage = (fmt) => {
+  const downloadSVG = async () => {
+    if (!svgContent) return;
+    setShowExportMenu(false);
+    setIsExporting(true);
+    try {
+      const title = await generateDiagramTitle();
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+  const downloadImage = async (fmt) => {
     if (!svgContent || !mermaidRef.current) return;
     const svgEl = mermaidRef.current.querySelector('svg');
     if (!svgEl) return;
+
+    setShowExportMenu(false);
+    setIsExporting(true);
+
+    // 先取得 AI 標題
+    const title = await generateDiagramTitle();
 
     // Helper: 將 Unicode SVG 字串轉為 Blob URL (避免 btoa 的 Latin-1 限制)
     const svgToDataUrl = (svgString) => {
@@ -854,7 +903,7 @@ function MainApp({ user, onLogout }) {
                 const downloadUrl = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = downloadUrl;
-                a.download = `mermaid-diagram-${Date.now()}.${fmt}`;
+                a.download = `${title}.${fmt}`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -883,8 +932,6 @@ function MainApp({ user, onLogout }) {
     };
 
     // Retry Logic: Try 2x first, then 1x, then 0.5x
-    setShowExportMenu(false); // 立即關閉選單以提供即時回饋
-
     exportWithScale(2)
       .catch((err) => {
         console.warn('Export at 2x failed, retrying at 1x...', err.message);
@@ -897,6 +944,9 @@ function MainApp({ user, onLogout }) {
       .catch((finalErr) => {
         console.error('Final Export Error:', finalErr);
         alert(`匯出失敗：${finalErr.message}\n\n建議方案：\n1. 嘗試下載 SVG 格式（無限制）\n2. 使用瀏覽器截圖功能\n3. 縮小圖表後重試`);
+      })
+      .finally(() => {
+        setIsExporting(false);
       });
   };
   const copyToClipboard = () => { const ta = document.createElement("textarea"); ta.value = mermaidCode; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); };
@@ -1194,7 +1244,9 @@ function MainApp({ user, onLogout }) {
               <button onClick={handleResetView} className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded"><RotateCcw className="w-4 h-4" /></button>
             </div>
             <div className="relative pointer-events-auto export-menu-container">
-              <button onClick={() => setShowExportMenu(!showExportMenu)} disabled={!svgContent} className={`bg-indigo-600 shadow-md border border-transparent text-white hover:bg-indigo-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50 ${showExportMenu ? 'ring-2 ring-indigo-300' : ''}`}><Download className="w-4 h-4" /> 匯出 <ChevronDown className={`w-3 h-3 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} /></button>
+              <button onClick={() => setShowExportMenu(!showExportMenu)} disabled={!svgContent || isExporting} className={`bg-indigo-600 shadow-md border border-transparent text-white hover:bg-indigo-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50 ${showExportMenu ? 'ring-2 ring-indigo-300' : ''}`}>
+                {isExporting ? <><Loader2 className="w-4 h-4 animate-spin" /> AI 命名中...</> : <><Download className="w-4 h-4" /> 匯出 <ChevronDown className={`w-3 h-3 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} /></>}
+              </button>
               {showExportMenu && <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 overflow-hidden animate-in fade-in zoom-in-95 origin-top-right"><button onClick={() => downloadImage('png')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"><FileImage className="w-4 h-4 text-green-600" /> 匯出 PNG</button><button onClick={() => downloadImage('jpg')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"><FileImage className="w-4 h-4 text-blue-600" /> 匯出 JPG</button><button onClick={downloadSVG} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"><FileCode className="w-4 h-4 text-orange-600" /> 匯出 SVG</button></div>}
             </div>
           </div>
