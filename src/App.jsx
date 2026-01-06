@@ -1287,7 +1287,7 @@ function MainApp({ user, onLogout }) {
               </div>
 
               {/* 底部按鈕區 */}
-              <div className="flex-shrink-0 px-4 pb-4 flex gap-2">
+              <div className="flex-shrink-0 px-4 pb-20 md:pb-4 flex gap-2">
                 <button
                   onClick={handleReset}
                   className="px-4 py-3 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm flex items-center justify-center"
@@ -1419,7 +1419,7 @@ function MainApp({ user, onLogout }) {
             </div>
 
             {/* Edit Tab */}
-            <div className={`absolute inset-0 flex flex-col p-4 transition-opacity duration-200 ${activeTab === 'edit' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+            <div className={`absolute inset-0 flex flex-col p-4 pb-24 md:pb-4 transition-opacity duration-200 ${activeTab === 'edit' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
               <div className="mb-4 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100 flex-shrink-0">
                 <label className="text-xs font-semibold text-indigo-700 mb-1 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI 智慧修改</label>
                 <div className="flex flex-col gap-2">
@@ -1448,7 +1448,7 @@ function MainApp({ user, onLogout }) {
             </div>
 
             {/* Workspace Tab */}
-            <div className={`absolute inset-0 flex flex-col p-4 transition-opacity duration-200 overflow-y-auto ${activeTab === 'workspace' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+            <div className={`absolute inset-0 flex flex-col p-4 pb-24 md:pb-4 transition-opacity duration-200 overflow-y-auto ${activeTab === 'workspace' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
               <div className="mb-4">
                 <h3 className="text-lg font-bold text-slate-800 mb-1">我的工作區</h3>
                 <p className="text-sm text-slate-500">儲存並管理您的 Mermaid圖表</p>
@@ -1714,15 +1714,14 @@ function MainApp({ user, onLogout }) {
       )}
 
       {/* Mobile Floating Action Button for View Toggle */}
-      < button
-        onClick={() => setIsMobilePreview(!isMobilePreview)
-        }
-        className="md:hidden fixed bottom-6 right-6 z-50 bg-indigo-600 text-white p-4 rounded-full shadow-xl hover:bg-indigo-700 transition-all active:scale-95"
+      <button
+        onClick={() => setIsMobilePreview(!isMobilePreview)}
+        className={`md:hidden fixed bottom-6 right-6 z-40 bg-indigo-600 text-white p-4 rounded-full shadow-xl hover:bg-indigo-700 transition-all active:scale-95 ${(showShareModal || showOptionsDrawer) ? 'hidden' : ''}`}
         title={isMobilePreview ? "回到編輯" : "預覽圖表"}
       >
         {isMobilePreview ? <PenTool className="w-6 h-6" /> : <ImageIcon className="w-6 h-6" />}
-      </button >
-    </div >
+      </button>
+    </div>
   );
 }
 
