@@ -26,11 +26,12 @@ const DIAGRAM_TYPES = [
 
 // --- Constants: Themes ---
 const THEMES = [
-  { id: 'default', label: '預設 (Default)', color: 'bg-indigo-500' },
-  { id: 'neutral', label: '簡約 (Neutral)', color: 'bg-slate-500' },
-  { id: 'dark', label: '深色 (Dark)', color: 'bg-slate-900' },
-  { id: 'forest', label: '森林 (Forest)', color: 'bg-emerald-600' },
-  { id: 'base', label: '基本 (Base)', color: 'bg-white border border-slate-300' },
+  { id: 'default', label: '預設 (Default)', color: 'bg-indigo-500', look: 'classic' },
+  { id: 'neutral', label: '簡約 (Neutral)', color: 'bg-slate-500', look: 'classic' },
+  { id: 'dark', label: '深色 (Dark)', color: 'bg-slate-900', look: 'classic' },
+  { id: 'forest', label: '森林 (Forest)', color: 'bg-emerald-600', look: 'classic' },
+  { id: 'base', label: '基本 (Base)', color: 'bg-white border border-slate-300', look: 'classic' },
+  { id: 'handDrawn', label: '✏️ 手繪風格 (Hand-Drawn)', color: 'bg-amber-100 border border-amber-400', look: 'handDrawn', baseTheme: 'neutral' },
 ];
 
 // --- Constants: High-Quality Example Prompts ---
@@ -449,9 +450,14 @@ function MainApp({ user, onLogout }) {
     script.src = "https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js";
     script.async = true;
     script.onload = () => {
+      const currentTheme = THEMES.find(t => t.id === theme);
+      const mermaidTheme = currentTheme?.baseTheme || theme;
+      const lookStyle = currentTheme?.look || 'classic';
+
       window.mermaid.initialize({
         startOnLoad: false,
-        theme: theme,
+        theme: mermaidTheme,
+        look: lookStyle,
         securityLevel: 'loose',
         flowchart: { htmlLabels: false },
       });
@@ -473,9 +479,14 @@ function MainApp({ user, onLogout }) {
   // --- 監聽 Theme 變更並重新渲染 ---
   useEffect(() => {
     if (window.mermaid) {
+      const currentTheme = THEMES.find(t => t.id === theme);
+      const mermaidTheme = currentTheme?.baseTheme || theme;
+      const lookStyle = currentTheme?.look || 'classic';
+
       window.mermaid.initialize({
         startOnLoad: false,
-        theme: theme,
+        theme: mermaidTheme,
+        look: lookStyle,
         securityLevel: 'loose',
         flowchart: { htmlLabels: false },
       });
