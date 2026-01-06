@@ -1017,30 +1017,95 @@ function MainApp({ user, onLogout }) {
     setShowShareModal(true);
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     const { to, cc, subject, body } = shareForm;
 
-    // 建立 mailto 連結
-    let mailtoUrl = `mailto:${encodeURIComponent(to)}`;
-    const params = [];
+    // 先下載 JPG 圖片
+    if (svgContent && mermaidRef.current) {
+      const svgEl = mermaidRef.current.querySelector('svg');
+      if (svgEl) {
+        try {
+          // 取得 AI 標題作為檔名
+          const title = await generateDiagramTitle();
 
-    if (cc.trim()) {
-      params.push(`cc=${encodeURIComponent(cc)}`);
-    }
-    if (subject.trim()) {
-      params.push(`subject=${encodeURIComponent(subject)}`);
-    }
-    if (body.trim()) {
-      params.push(`body=${encodeURIComponent(body)}`);
+          const bbox = svgEl.getBBox();
+          const w = bbox.width;
+          const h = bbox.height;
+
+          const cloned = svgEl.cloneNode(true);
+          cloned.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+          cloned.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+          cloned.setAttribute('width', w);
+          cloned.setAttribute('height', h);
+
+          const bgColor = theme === 'dark' ? '#0f172a' : '#ffffff';
+          const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          bgRect.setAttribute('x', bbox.x);
+          bgRect.setAttribute('y', bbox.y);
+          bgRect.setAttribute('width', bbox.width);
+          bgRect.setAttribute('height', bbox.height);
+          bgRect.setAttribute('fill', bgColor);
+          cloned.insertBefore(bgRect, cloned.firstChild);
+
+          const svgStr = new XMLSerializer().serializeToString(cloned);
+          const encoded = encodeURIComponent(svgStr)
+            .replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode(parseInt(p1, 16)));
+          const dataUrl = 'data:image/svg+xml;base64,' + btoa(encoded);
+
+          const img = new Image();
+          img.onload = () => {
+            const cvs = document.createElement('canvas');
+            cvs.width = Math.ceil(w * 2);
+            cvs.height = Math.ceil(h * 2);
+            const ctx = cvs.getContext('2d');
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, cvs.width, cvs.height);
+            ctx.drawImage(img, 0, 0, cvs.width, cvs.height);
+
+            cvs.toBlob((blob) => {
+              if (blob) {
+                const downloadUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `${title}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(downloadUrl);
+              }
+            }, 'image/jpeg', 0.95);
+          };
+          img.src = dataUrl;
+        } catch (e) {
+          console.error('圖片下載失敗', e);
+        }
+      }
     }
 
-    if (params.length > 0) {
-      mailtoUrl += '?' + params.join('&');
-    }
+    // 延遲一下再開啟郵件，讓圖片有時間下載
+    setTimeout(() => {
+      // 建立 mailto 連結
+      let mailtoUrl = `mailto:${encodeURIComponent(to)}`;
+      const params = [];
 
-    // 開啟郵件客戶端
-    window.open(mailtoUrl, '_blank');
-    setShowShareModal(false);
+      if (cc.trim()) {
+        params.push(`cc=${encodeURIComponent(cc)}`);
+      }
+      if (subject.trim()) {
+        params.push(`subject=${encodeURIComponent(subject)}`);
+      }
+      if (body.trim()) {
+        params.push(`body=${encodeURIComponent(body)}`);
+      }
+
+      if (params.length > 0) {
+        mailtoUrl += '?' + params.join('&');
+      }
+
+      // 開啟郵件客戶端
+      window.open(mailtoUrl, '_blank');
+      setShowShareModal(false);
+    }, 500);
   };
 
   return (
@@ -1519,9 +1584,9 @@ function MainApp({ user, onLogout }) {
               </div>
 
               {/* 提示訊息 */}
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <p className="text-xs text-amber-700">
-                  💡 <strong>提示：</strong>請先使用「匯出」功能下載圖表檔案，開啟郵件後手動附加圖片檔案。
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                <p className="text-xs text-indigo-700">
+                  � <strong>自動附件：</strong>點擊「下載圖片並開啟郵件」後，系統會自動下載 JPG 圖片，請在郵件中附加該檔案。
                 </p>
               </div>
             </div>
@@ -1539,8 +1604,8 @@ function MainApp({ user, onLogout }) {
                 disabled={!shareForm.to.trim()}
                 className="flex-1 py-2.5 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <Share2 className="w-4 h-4" />
-                開啟郵件
+                <Download className="w-4 h-4" />
+                下載圖片並開啟郵件
               </button>
             </div>
           </div>
