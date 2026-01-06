@@ -1008,11 +1008,13 @@ function MainApp({ user, onLogout }) {
     setShowExportMenu(false);
     // 使用 AI 產生預設主旨
     const title = await generateDiagramTitle();
+    const senderEmail = user?.username || user?.email || '';
+    const senderName = user?.name || '使用者';
     setShareForm({
       to: '',
       cc: '',
       subject: `【Mermaid 圖表分享】${title}`,
-      body: `您好，\n\n我想與您分享這份 Mermaid 圖表。\n\n請點擊「開啟郵件」後，記得附加已下載的圖表檔案。\n\n---\nMermaid 語法：\n${mermaidCode}\n\n此郵件由 Mermaid AI 工具生成`
+      body: `您好，\n\n${senderName} 想與您分享一份 Mermaid 圖表。\n\n圖表已自動下載為 JPG 附件，請確認已附加至此郵件。\n\n---\n寄件人：${senderName}${senderEmail ? ` <${senderEmail}>` : ''}\n\n---\nMermaid 語法：\n${mermaidCode}\n\n此郵件由 Mermaid AI 工具生成`
     });
     setShowShareModal(true);
   };
@@ -1528,6 +1530,16 @@ function MainApp({ user, onLogout }) {
 
             {/* 表單內容 */}
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* 寄件人 (唯讀) */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  寄件人
+                </label>
+                <div className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-600">
+                  {user?.name || '使用者'} {user?.username || user?.email ? `<${user?.username || user?.email}>` : ''}
+                </div>
+              </div>
+
               {/* 收件人 */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
