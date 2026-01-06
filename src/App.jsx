@@ -1295,6 +1295,13 @@ function MainApp({ user, onLogout }) {
                 >
                   <RotateCcw className="w-5 h-5" />
                 </button>
+                <button
+                  onClick={() => setIsMobilePreview(true)}
+                  className="md:hidden px-4 py-3 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 hover:bg-indigo-100 transition-all shadow-sm flex items-center justify-center gap-2"
+                  title="預覽圖表"
+                >
+                  <Eye className="w-5 h-5" />
+                </button>
                 <button onClick={handleGenerate} disabled={isGenerating || (!prompt.trim() && !selectedImage)} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-medium transition-all shadow-md hover:shadow-lg ${isGenerating || (!prompt.trim() && !selectedImage) ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]'}`}>
                   {isGenerating ? (<><Loader2 className="w-5 h-5 animate-spin" /> 生成中...</>) : (<><Play className="w-5 h-5 fill-current" /> 生成圖表</>)}
                 </button>
@@ -1437,6 +1444,13 @@ function MainApp({ user, onLogout }) {
               <div className="flex-1 relative min-h-0 border rounded-lg overflow-hidden shadow-inner">
                 <textarea value={mermaidCode} onChange={(e) => setMermaidCode(e.target.value)} className="absolute inset-0 w-full h-full p-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset resize-none bg-slate-900 text-slate-100" spellCheck="false" />
               </div>
+
+              <button
+                onClick={() => setIsMobilePreview(true)}
+                className="md:hidden mt-3 w-full py-3 bg-indigo-50 border border-indigo-200 text-indigo-600 font-medium rounded-lg hover:bg-indigo-100 transition-colors shadow-sm flex items-center justify-center gap-2 flex-shrink-0"
+              >
+                <Eye className="w-4 h-4" /> 預覽圖表
+              </button>
               {renderError && (
                 <div className="mt-3 flex-shrink-0 animate-in fade-in slide-in-from-bottom-2">
                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg space-y-2">
@@ -1520,6 +1534,13 @@ function MainApp({ user, onLogout }) {
           onWheel={undefined} // Handled by useEffect
         >
           <div className="absolute top-4 right-4 flex items-center gap-1.5 md:gap-2 z-10 pointer-events-none flex-wrap justify-end max-w-full pl-4">
+            <button
+              onClick={() => setIsMobilePreview(false)}
+              className={`pointer-events-auto md:hidden bg-indigo-600 text-white shadow-md border border-transparent hover:bg-indigo-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${isMobilePreview ? 'flex' : 'hidden'}`}
+              title="回到編輯"
+            >
+              <PenTool className="w-4 h-4" /> 編輯
+            </button>
             <button onClick={() => setIsFullscreen(!isFullscreen)} className="pointer-events-auto bg-white/90 backdrop-blur shadow-sm border border-slate-200 text-slate-700 hover:text-indigo-600 px-2 md:px-3 py-2 rounded-lg text-sm font-medium hidden md:flex items-center gap-2" title={isFullscreen ? "退出全螢幕" : "全螢幕預覽"}>
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
@@ -1713,14 +1734,7 @@ function MainApp({ user, onLogout }) {
         </>
       )}
 
-      {/* Mobile Floating Action Button for View Toggle */}
-      <button
-        onClick={() => setIsMobilePreview(!isMobilePreview)}
-        className={`md:hidden fixed bottom-6 right-6 z-40 bg-indigo-600 text-white p-4 rounded-full shadow-xl hover:bg-indigo-700 transition-all active:scale-95 ${(showShareModal || showOptionsDrawer) ? 'hidden' : ''}`}
-        title={isMobilePreview ? "回到編輯" : "預覽圖表"}
-      >
-        {isMobilePreview ? <PenTool className="w-6 h-6" /> : <ImageIcon className="w-6 h-6" />}
-      </button>
+      {/* Mobile Floating Action Button removed based on user feedback */}
     </div>
   );
 }
