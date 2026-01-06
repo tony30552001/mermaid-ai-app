@@ -311,10 +311,13 @@ function MainApp({ user, onLogout }) {
   const fileInputRef = useRef(null);
 
   // 圖表類型選單狀態
-  const [showTypeSelector, setShowTypeSelector] = useState(true);
+  const [showTypeSelector, setShowTypeSelector] = useState(false); // 預設收合
   const [typeSelectorHeight, setTypeSelectorHeight] = useState(120);
   const [isResizingSelector, setIsResizingSelector] = useState(false);
   const selectorRef = useRef(null);
+
+  // 底部抽屜狀態 (手機版選項面板)
+  const [showOptionsDrawer, setShowOptionsDrawer] = useState(false);
 
   useEffect(() => {
     const handleMouseUp = () => setIsResizingSelector(false);
@@ -1031,130 +1034,57 @@ function MainApp({ user, onLogout }) {
 
           <div className="flex-1 overflow-hidden flex flex-col relative">
             {/* Generate Tab */}
-            <div className={`absolute inset-0 flex flex-col p-4 transition-opacity duration-200 ${activeTab === 'generate' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+            <div className={`absolute inset-0 flex flex-col transition-opacity duration-200 ${activeTab === 'generate' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
 
-              {/* Image Upload Toggle */}
-              <div className="mb-4">
-                <button
-                  onClick={() => setShowImageUpload(!showImageUpload)}
-                  className="w-full flex items-center justify-between py-2 text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors group"
-                >
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4 group-hover:text-indigo-600" />
-                    <span>圖片轉圖表 (選填)</span>
-                    {selectedImage && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full">已上傳</span>}
-                  </div>
-                  {showImageUpload ? <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" /> : <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />}
-                </button>
-
-                {showImageUpload && (
-                  <div className="mt-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div
-                      className={`relative border-2 border-dashed rounded-lg p-4 transition-colors flex flex-col items-center justify-center text-center cursor-pointer min-h-[100px] group
-                        ${selectedImage ? 'border-indigo-300 bg-indigo-50/50' : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'}`}
-                      onClick={() => !selectedImage && fileInputRef.current?.click()}
-                    >
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                      />
-
-                      {isAnalyzingImage ? (
-                        <div className="flex flex-col items-center text-indigo-600">
-                          <Loader2 className="w-6 h-6 animate-spin mb-2" />
-                          <span className="text-xs font-medium">AI 正在分析圖片內容...</span>
-                        </div>
-                      ) : selectedImage ? (
-                        <div className="w-full relative group">
-                          <img src={selectedImage} alt="Uploaded" className="max-h-[120px] mx-auto rounded shadow-sm object-contain" />
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRemoveImage(); }}
-                            className="absolute top-0 right-0 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-md"
-                            title="移除圖片"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="bg-white p-2 rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
-                            <Upload className="w-5 h-5 text-indigo-500" />
-                          </div>
-                          <p className="text-xs text-slate-500 font-medium">點擊或拖曳圖片至此</p>
-                          <p className="text-[10px] text-slate-400 mt-1">支援白板草圖、截圖或手繪稿</p>
-                        </>
-                      )}
+              {/* 摘要列 - 點擊展開選項 */}
+              <div
+                className="flex-shrink-0 px-4 py-3 bg-gradient-to-r from-indigo-50 to-slate-50 border-b border-slate-200 cursor-pointer hover:from-indigo-100 hover:to-slate-100 transition-colors"
+                onClick={() => setShowOptionsDrawer(true)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* 圖表類型標籤 */}
+                    <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-lg shadow-sm border border-slate-200">
+                      <Layout className="w-4 h-4 text-indigo-600" />
+                      <span className="text-xs font-semibold text-slate-700">
+                        {DIAGRAM_TYPES.find(t => t.id === diagramType)?.label.split(' (')[0]}
+                      </span>
                     </div>
+                    {/* 圖片狀態標籤 */}
+                    {selectedImage ? (
+                      <div className="flex items-center gap-1.5 bg-green-50 px-2.5 py-1.5 rounded-lg border border-green-200">
+                        <ImageIcon className="w-4 h-4 text-green-600" />
+                        <span className="text-xs font-semibold text-green-700">已上傳圖片</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-lg shadow-sm border border-slate-200 opacity-60">
+                        <ImageIcon className="w-4 h-4 text-slate-400" />
+                        <span className="text-xs text-slate-500">圖片 (選填)</span>
+                      </div>
+                    )}
                   </div>
-                )}
+                  <div className="flex items-center gap-1 text-indigo-600">
+                    <span className="text-xs font-medium hidden sm:inline">設定選項</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
               </div>
 
-              {/* Diagram Type Selector */}
-              {/* Diagram Type Selector */}
-              <div className="mb-4">
-                <button
-                  onClick={() => setShowTypeSelector(!showTypeSelector)}
-                  className="w-full flex items-center justify-between py-2 text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors mb-2 group"
-                >
-                  <div className="flex items-center gap-2">
-                    <Layout className="w-4 h-4 group-hover:text-indigo-600" />
-                    <span>選擇圖表類型</span>
-                    <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full ml-1">
-                      {DIAGRAM_TYPES.find(t => t.id === diagramType)?.label.split(' (')[0]}
-                    </span>
-                  </div>
-                  {showTypeSelector ? <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" /> : <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />}
-                </button>
-
-                {showTypeSelector && (
-                  <div className="relative" ref={selectorRef}>
-                    <div
-                      className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-1.5 overflow-y-auto pr-1 custom-scrollbar animate-in fade-in slide-in-from-top-1 transition-all duration-75 ease-out"
-                      style={{ height: `${typeSelectorHeight}px` }}
-                    >
-                      {DIAGRAM_TYPES.map((type) => {
-                        const Icon = type.icon;
-                        return (
-                          <button
-                            key={type.id}
-                            onClick={() => handleTypeSelect(type.id)}
-                            className={`flex flex-col items-center justify-center gap-1 p-2 rounded-md border text-[10px] font-medium transition-all text-center
-                            ${diagramType === type.id
-                                ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm'
-                                : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
-                          >
-                            <Icon className="w-4 h-4 shrink-0" />
-                            <span className="truncate w-full">{type.label.split(' (')[0]}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Resize Handle */}
-                    <div
-                      className="w-full h-4 cursor-ns-resize flex items-center justify-center hover:bg-slate-100 transition-colors rounded-b-md"
-                      onMouseDown={(e) => { e.preventDefault(); setIsResizingSelector(true); }}
-                    >
-                      <div className="w-12 h-1 bg-slate-300 rounded-full" />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 flex flex-col min-h-0 border-t border-slate-100 pt-4">
+              {/* 主要內容區 - 描述輸入 (最大化) */}
+              <div className="flex-1 flex flex-col p-4 min-h-0">
                 <label className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-1 flex-shrink-0">
                   <PenTool className="w-4 h-4" /> 描述流程或需求
                 </label>
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder={`請描述您的需求...`}
-                  className="flex-1 w-full p-4 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none bg-slate-50 leading-relaxed font-mono placeholder:text-slate-400"
+                  placeholder={`請描述您想要的圖表內容...\n\n範例：\n- 使用者登入流程，包含帳號驗證、雙因素認證、登入成功或失敗的分支\n- 網站架構圖，首頁連結到商品頁、關於我們、聯絡我們\n- 專案開發時間軸，從需求分析到上線維運的各個階段`}
+                  className="flex-1 w-full p-4 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none bg-slate-50 leading-relaxed placeholder:text-slate-400"
                 />
               </div>
-              <div className="mt-4 flex-shrink-0 flex gap-2">
+
+              {/* 底部按鈕區 */}
+              <div className="flex-shrink-0 px-4 pb-4 flex gap-2">
                 <button
                   onClick={handleReset}
                   className="px-4 py-3 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm flex items-center justify-center"
@@ -1163,9 +1093,126 @@ function MainApp({ user, onLogout }) {
                   <RotateCcw className="w-5 h-5" />
                 </button>
                 <button onClick={handleGenerate} disabled={isGenerating || (!prompt.trim() && !selectedImage)} className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-medium transition-all shadow-md hover:shadow-lg ${isGenerating || (!prompt.trim() && !selectedImage) ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]'}`}>
-                  {isGenerating ? (<><Loader2 className="w-5 h-5 animate-spin" /> 生成中...</>) : (<><Play className="w-5 h-5 fill-current" /> 生成</>)}
+                  {isGenerating ? (<><Loader2 className="w-5 h-5 animate-spin" /> 生成中...</>) : (<><Play className="w-5 h-5 fill-current" /> 生成圖表</>)}
                 </button>
               </div>
+
+              {/* 底部抽屜 - 選項面板 */}
+              {showOptionsDrawer && (
+                <>
+                  {/* 背景遮罩 */}
+                  <div
+                    className="fixed inset-0 bg-black/30 z-40 animate-in fade-in duration-200"
+                    onClick={() => setShowOptionsDrawer(false)}
+                  />
+                  {/* 抽屜內容 */}
+                  <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[85vh] flex flex-col">
+                    {/* 抽屜把手 */}
+                    <div className="flex justify-center py-3 flex-shrink-0">
+                      <div className="w-10 h-1 bg-slate-300 rounded-full" />
+                    </div>
+
+                    {/* 抽屜標題 */}
+                    <div className="px-4 pb-3 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+                      <h3 className="text-lg font-bold text-slate-800">設定選項</h3>
+                      <button
+                        onClick={() => setShowOptionsDrawer(false)}
+                        className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                      >
+                        <X className="w-5 h-5 text-slate-500" />
+                      </button>
+                    </div>
+
+                    {/* 抽屜內容 - 可滾動 */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                      {/* 圖表類型選擇 */}
+                      <div>
+                        <label className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                          <Layout className="w-4 h-4 text-indigo-600" />
+                          選擇圖表類型
+                        </label>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
+                          {DIAGRAM_TYPES.map((type) => {
+                            const Icon = type.icon;
+                            return (
+                              <button
+                                key={type.id}
+                                onClick={() => {
+                                  handleTypeSelect(type.id);
+                                }}
+                                className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border-2 text-xs font-medium transition-all
+                                ${diagramType === type.id
+                                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-md'
+                                    : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}
+                              >
+                                <Icon className="w-5 h-5 shrink-0" />
+                                <span className="truncate w-full text-center">{type.label.split(' (')[0]}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* 圖片上傳區 */}
+                      <div>
+                        <label className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                          <ImageIcon className="w-4 h-4 text-indigo-600" />
+                          圖片轉圖表 (選填)
+                        </label>
+                        <div
+                          className={`relative border-2 border-dashed rounded-xl p-6 transition-colors flex flex-col items-center justify-center text-center cursor-pointer min-h-[140px] mt-3
+                            ${selectedImage ? 'border-indigo-300 bg-indigo-50/50' : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'}`}
+                          onClick={() => !selectedImage && fileInputRef.current?.click()}
+                        >
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                          />
+
+                          {isAnalyzingImage ? (
+                            <div className="flex flex-col items-center text-indigo-600">
+                              <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                              <span className="text-sm font-medium">AI 正在分析圖片內容...</span>
+                            </div>
+                          ) : selectedImage ? (
+                            <div className="w-full relative group">
+                              <img src={selectedImage} alt="Uploaded" className="max-h-[160px] mx-auto rounded-lg shadow-md object-contain" />
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleRemoveImage(); }}
+                                className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg transition-all"
+                                title="移除圖片"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="bg-indigo-100 p-3 rounded-full mb-3">
+                                <Upload className="w-6 h-6 text-indigo-600" />
+                              </div>
+                              <p className="text-sm text-slate-600 font-medium">點擊或拖曳圖片至此</p>
+                              <p className="text-xs text-slate-400 mt-1">支援白板草圖、截圖或手繪稿</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 抽屜底部按鈕 */}
+                    <div className="flex-shrink-0 p-4 border-t border-slate-100 bg-slate-50">
+                      <button
+                        onClick={() => setShowOptionsDrawer(false)}
+                        className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg"
+                      >
+                        完成設定
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Edit Tab */}
