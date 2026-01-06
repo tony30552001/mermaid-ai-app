@@ -823,16 +823,37 @@ function MainApp({ user, onLogout }) {
     // 先取得 AI 標題
     const title = await generateDiagramTitle();
 
-    // Helper: 將 Unicode SVG 字串轉為 Blob URL (避免 btoa 的 Latin-1 限制)
+    // Helper: 內嵌所有樣式到 SVG
+    const inlineStyles = (svgElement) => {
+      const cloned = svgElement.cloneNode(true);
+
+      // 取得所有計算樣式並內嵌
+      const allElements = cloned.querySelectorAll('*');
+      allElements.forEach(el => {
+        const computed = window.getComputedStyle(svgElement.querySelector(`#${el.id}`) || el);
+        const importantStyles = ['fill', 'stroke', 'stroke-width', 'font-family', 'font-size', 'font-weight', 'opacity', 'transform'];
+        importantStyles.forEach(prop => {
+          const value = computed.getPropertyValue(prop);
+          if (value && value !== 'none' && value !== '') {
+            el.style[prop] = value;
+          }
+        });
+      });
+
+      return cloned;
+    };
+
+    // Helper: 將 SVG 轉換為 Data URL (使用 Base64 編碼)
     const svgToDataUrl = (svgString) => {
-      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-      return URL.createObjectURL(blob);
+      // 處理 Unicode 字元
+      const encoded = encodeURIComponent(svgString)
+        .replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode(parseInt(p1, 16)));
+      return 'data:image/svg+xml;base64,' + btoa(encoded);
     };
 
     // Helper to perform the actual export with a specific scale
     const exportWithScale = (scaleToUse) => {
       return new Promise((resolve, reject) => {
-        let blobUrl = null;
         try {
           // 1. Get bounds and clone
           const bbox = svgEl.getBBox();
@@ -849,11 +870,13 @@ function MainApp({ user, onLogout }) {
             return;
           }
 
+          // 複製並處理 SVG
           const cloned = svgEl.cloneNode(true);
+          cloned.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+          cloned.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
           cloned.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
           cloned.setAttribute('width', w);
           cloned.setAttribute('height', h);
-          // 移除可能造成問題的屬性
           cloned.removeAttribute('style');
           cloned.removeAttribute('class');
 
@@ -868,13 +891,33 @@ function MainApp({ user, onLogout }) {
           bgRect.setAttribute('fill', bgColor);
           cloned.insertBefore(bgRect, cloned.firstChild);
 
-          // 2. Serialize and create Blob URL (避免 btoa 的 Unicode 問題)
-          const svgStr = new XMLSerializer().serializeToString(cloned);
-          blobUrl = svgToDataUrl(svgStr);
+          // 移除可能造成跨域問題的元素
+          const foreignObjects = cloned.querySelectorAll('foreignObject');
+          foreignObjects.forEach(fo => fo.remove());
 
-          // 3. Load Image
+          // 移除外部圖片引用
+          const images = cloned.querySelectorAll('image');
+          images.forEach(img => {
+            const href = img.getAttribute('href') || img.getAttribute('xlink:href');
+            if (href && !href.startsWith('data:')) {
+              img.remove();
+            }
+          });
+
+          // 內嵌必要的字體樣式
+          const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+          styleEl.textContent = `
+            * { font-family: "Segoe UI", "Noto Sans TC", sans-serif !important; }
+            text { font-family: "Segoe UI", "Noto Sans TC", sans-serif !important; }
+          `;
+          cloned.insertBefore(styleEl, cloned.firstChild);
+
+          // 2. Serialize to Data URL
+          const svgStr = new XMLSerializer().serializeToString(cloned);
+          const dataUrl = svgToDataUrl(svgStr);
+
+          // 3. Load Image (不設定 crossOrigin 因為是 data URL)
           const img = new Image();
-          img.crossOrigin = 'anonymous';
 
           img.onload = () => {
             try {
@@ -913,19 +956,16 @@ function MainApp({ user, onLogout }) {
 
             } catch (err) {
               reject(err);
-            } finally {
-              if (blobUrl) URL.revokeObjectURL(blobUrl);
             }
           };
 
-          img.onerror = () => {
-            if (blobUrl) URL.revokeObjectURL(blobUrl);
-            reject(new Error('圖片載入失敗 - 可能存在安全限制'));
+          img.onerror = (e) => {
+            console.error('Image load error:', e);
+            reject(new Error('圖片載入失敗'));
           };
 
-          img.src = blobUrl;
+          img.src = dataUrl;
         } catch (e) {
-          if (blobUrl) URL.revokeObjectURL(blobUrl);
           reject(e);
         }
       });
