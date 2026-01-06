@@ -183,22 +183,73 @@ const INITIAL_CODE = `graph TD
     G -- 失敗 --> K[顯示錯誤訊息]
     K --> E`;
 
-function UserProfile({ user }) {
+function UserMenu({ user, onLogout }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const { instance } = useMsal();
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    if (user?.provider === 'microsoft') {
+      instance.logoutPopup({
+        postLogoutRedirectUri: "/",
+        mainWindowRedirectUri: "/"
+      });
+    } else if (user?.provider === 'google') {
+      googleLogout();
+      onLogout();
+      window.location.reload();
+    }
+    setIsOpen(false);
+  };
+
   const name = user?.name || "使用者";
-  const username = user?.username || "";
+  const email = user?.username || user?.email || "";
   const avatar = user?.avatar;
 
   return (
-    <div className="flex items-center gap-2 pl-2 md:pl-4 border-l border-slate-200">
-      <div className="hidden sm:flex flex-col items-end">
-        <span className="text-sm font-medium text-slate-700">{name}</span>
-        <span className="text-[10px] text-slate-500">{username}</span>
-      </div>
-      {avatar ? (
-        <img src={avatar} alt={name} className="w-8 h-8 rounded-full border border-indigo-200" />
-      ) : (
-        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold border border-indigo-200">
-          {name.charAt(0)}
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 pl-2 md:pl-4 focus:outline-none hover:opacity-80 transition-opacity"
+      >
+        <div className="hidden sm:flex flex-col items-end">
+          <span className="text-sm font-medium text-slate-700">{name}</span>
+          <span className="text-[10px] text-slate-500">{email}</span>
+        </div>
+        {avatar ? (
+          <img src={avatar} alt={name} className="w-8 h-8 rounded-full border border-indigo-200 shadow-sm" />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold border border-indigo-200 shadow-sm">
+            {name.charAt(0)}
+          </div>
+        )}
+        <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50 animate-in fade-in zoom-in-95 origin-top-right">
+          {/* Mobile Info (visible only on small screens) */}
+          <div className="sm:hidden px-4 py-3 border-b border-slate-100 mb-1 bg-slate-50/50">
+            <p className="text-sm font-semibold text-slate-900">{name}</p>
+            <p className="text-xs text-slate-500 truncate">{email}</p>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors font-medium"
+          >
+            <LogOut className="w-4 h-4" /> 登出系統
+          </button>
         </div>
       )}
     </div>
@@ -1278,8 +1329,7 @@ function MainApp({ user, onLogout }) {
         </div>
         <div className="flex items-center gap-4">
           <a href="https://mermaid.js.org/intro/" target="_blank" rel="noreferrer" className="text-sm text-indigo-600 hover:underline hidden md:block">語法參考</a>
-          <UserProfile user={user} />
-          <SignOutButton onLogout={onLogout} provider={user?.provider} />
+          <UserMenu user={user} onLogout={onLogout} />
         </div>
       </header>
 
