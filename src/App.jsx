@@ -425,6 +425,15 @@ function MainApp({ user, onLogout }) {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // 分享郵件狀態
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareForm, setShareForm] = useState({
+    to: '',
+    cc: '',
+    subject: '',
+    body: ''
+  });
+
   // 互動狀態：平移 (Pan)
   const [isPanningTool, setIsPanningTool] = useState(true);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -994,6 +1003,46 @@ function MainApp({ user, onLogout }) {
   };
   const copyToClipboard = () => { const ta = document.createElement("textarea"); ta.value = mermaidCode; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); };
 
+  // 分享郵件功能
+  const openShareModal = async () => {
+    setShowExportMenu(false);
+    // 使用 AI 產生預設主旨
+    const title = await generateDiagramTitle();
+    setShareForm({
+      to: '',
+      cc: '',
+      subject: `【Mermaid 圖表分享】${title}`,
+      body: `您好，\n\n我想與您分享這份 Mermaid 圖表。\n\n請點擊「開啟郵件」後，記得附加已下載的圖表檔案。\n\n---\nMermaid 語法：\n${mermaidCode}\n\n此郵件由 Mermaid AI 工具生成`
+    });
+    setShowShareModal(true);
+  };
+
+  const handleSendEmail = () => {
+    const { to, cc, subject, body } = shareForm;
+
+    // 建立 mailto 連結
+    let mailtoUrl = `mailto:${encodeURIComponent(to)}`;
+    const params = [];
+
+    if (cc.trim()) {
+      params.push(`cc=${encodeURIComponent(cc)}`);
+    }
+    if (subject.trim()) {
+      params.push(`subject=${encodeURIComponent(subject)}`);
+    }
+    if (body.trim()) {
+      params.push(`body=${encodeURIComponent(body)}`);
+    }
+
+    if (params.length > 0) {
+      mailtoUrl += '?' + params.join('&');
+    }
+
+    // 開啟郵件客戶端
+    window.open(mailtoUrl, '_blank');
+    setShowShareModal(false);
+  };
+
   return (
     <div className="h-screen bg-slate-50 flex flex-col overflow-hidden text-slate-800" style={{ fontFamily: '"Roboto Flex", "Noto Sans TC", sans-serif' }}>
       {/* Header */}
@@ -1336,7 +1385,23 @@ function MainApp({ user, onLogout }) {
               <button onClick={() => setShowExportMenu(!showExportMenu)} disabled={!svgContent || isExporting} className={`bg-indigo-600 shadow-md border border-transparent text-white hover:bg-indigo-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50 ${showExportMenu ? 'ring-2 ring-indigo-300' : ''}`}>
                 {isExporting ? <><Loader2 className="w-4 h-4 animate-spin" /> AI 命名中...</> : <><Download className="w-4 h-4" /> 匯出 <ChevronDown className={`w-3 h-3 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} /></>}
               </button>
-              {showExportMenu && <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 overflow-hidden animate-in fade-in zoom-in-95 origin-top-right"><button onClick={() => downloadImage('png')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"><FileImage className="w-4 h-4 text-green-600" /> 匯出 PNG</button><button onClick={() => downloadImage('jpg')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"><FileImage className="w-4 h-4 text-blue-600" /> 匯出 JPG</button><button onClick={downloadSVG} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"><FileCode className="w-4 h-4 text-orange-600" /> 匯出 SVG</button></div>}
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 py-1 overflow-hidden animate-in fade-in zoom-in-95 origin-top-right">
+                  <button onClick={() => downloadImage('png')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    <FileImage className="w-4 h-4 text-green-600" /> 匯出 PNG
+                  </button>
+                  <button onClick={() => downloadImage('jpg')} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    <FileImage className="w-4 h-4 text-blue-600" /> 匯出 JPG
+                  </button>
+                  <button onClick={downloadSVG} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    <FileCode className="w-4 h-4 text-orange-600" /> 匯出 SVG
+                  </button>
+                  <div className="border-t border-slate-100 my-1" />
+                  <button onClick={openShareModal} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    <Share2 className="w-4 h-4 text-indigo-600" /> 分享郵件
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1369,6 +1434,118 @@ function MainApp({ user, onLogout }) {
           </div>
         </div>
       </main >
+
+      {/* 分享郵件對話框 */}
+      {showShareModal && (
+        <>
+          {/* 背景遮罩 */}
+          <div
+            className="fixed inset-0 bg-black/40 z-50 animate-in fade-in duration-200"
+            onClick={() => setShowShareModal(false)}
+          />
+          {/* 對話框 */}
+          <div className="fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[500px] md:max-h-[85vh] z-50 bg-white rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 fade-in duration-300">
+            {/* 標題列 */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Share2 className="w-5 h-5 text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800">分享圖表</h3>
+              </div>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+
+            {/* 表單內容 */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* 收件人 */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  收件人 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={shareForm.to}
+                  onChange={(e) => setShareForm(prev => ({ ...prev, to: e.target.value }))}
+                  placeholder="example@email.com"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              {/* CC */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  副本 (CC)
+                </label>
+                <input
+                  type="text"
+                  value={shareForm.cc}
+                  onChange={(e) => setShareForm(prev => ({ ...prev, cc: e.target.value }))}
+                  placeholder="多個信箱用逗號分隔"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              {/* 主旨 */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  主旨
+                </label>
+                <input
+                  type="text"
+                  value={shareForm.subject}
+                  onChange={(e) => setShareForm(prev => ({ ...prev, subject: e.target.value }))}
+                  placeholder="郵件主旨"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              {/* 內文 */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  內文
+                </label>
+                <textarea
+                  value={shareForm.body}
+                  onChange={(e) => setShareForm(prev => ({ ...prev, body: e.target.value }))}
+                  rows={6}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                />
+              </div>
+
+              {/* 提示訊息 */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-xs text-amber-700">
+                  💡 <strong>提示：</strong>請先使用「匯出」功能下載圖表檔案，開啟郵件後手動附加圖片檔案。
+                </p>
+              </div>
+            </div>
+
+            {/* 底部按鈕 */}
+            <div className="flex gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="flex-1 py-2.5 px-4 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSendEmail}
+                disabled={!shareForm.to.trim()}
+                className="flex-1 py-2.5 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                開啟郵件
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Mobile Floating Action Button for View Toggle */}
       < button
