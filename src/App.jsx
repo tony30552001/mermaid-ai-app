@@ -448,6 +448,8 @@ function MainApp({ user, onLogout }) {
 
   // Touch Handling Ref
   const lastTouchRef = useRef({ x: 0, y: 0 });
+  const lastPinchDistRef = useRef(null);
+  const startScaleRef = useRef(1);
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -772,22 +774,43 @@ function MainApp({ user, onLogout }) {
   const handleCanvasMouseLeave = () => setIsPanDragging(false);
 
   // Touch Handlers for Mobile Panning
+  // Touch Handlers for Mobile Panning & Zooming
+  const getTouchDist = (touches) => {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  };
+
   const handleCanvasTouchStart = (e) => {
-    if (isPanningTool && e.touches.length === 1) {
+    // 單指拖曳
+    if (e.touches.length === 1 && isPanningTool) {
       setIsPanDragging(true);
       lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    // 雙指縮放
+    else if (e.touches.length === 2) {
+      e.preventDefault();
+      const dist = getTouchDist(e.touches);
+      lastPinchDistRef.current = dist;
+      startScaleRef.current = scale;
+      setIsPanDragging(false); // 縮放時取消拖曳狀態，避免衝突
     }
   };
 
   const handleCanvasTouchMove = (e) => {
-    if (isPanDragging && e.touches.length === 1) {
-      // 嘗試阻止預設滾動行為，讓畫布可以拖曳
-      // 注意：某些瀏覽器可能將 touchmove 視為 passive，此時 e.preventDefault() 無效，
-      // 但在 React 18+ 合成事件中通常可以用。
-      // 如果無效，可能需要透過 ref addEventListener 來綁定非 passive 監聽器。
-      // 這裡先嘗試直接使用。
+    // 雙指縮放 (優先處理)
+    if (e.touches.length === 2) {
       if (e.cancelable) e.preventDefault();
-
+      const dist = getTouchDist(e.touches);
+      if (lastPinchDistRef.current > 0) {
+        const zoomFactor = dist / lastPinchDistRef.current;
+        const newScale = Math.min(5, Math.max(0.1, startScaleRef.current * zoomFactor));
+        setScale(newScale);
+      }
+    }
+    // 單指拖曳
+    else if (e.touches.length === 1 && isPanDragging) {
+      if (e.cancelable) e.preventDefault();
       const touch = e.touches[0];
       const dx = touch.clientX - lastTouchRef.current.x;
       const dy = touch.clientY - lastTouchRef.current.y;
@@ -1505,7 +1528,7 @@ function MainApp({ user, onLogout }) {
               <button onClick={() => setShowThemeMenu(!showThemeMenu)} className="bg-white/90 backdrop-blur shadow-sm border border-slate-200 text-slate-700 hover:text-indigo-600 px-2 md:px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2"><Palette className="w-4 h-4" /><ChevronDown className={`w-3 h-3 transition-transform ${showThemeMenu ? 'rotate-180' : ''}`} /></button>
               {showThemeMenu && <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 overflow-hidden animate-in fade-in zoom-in-95 origin-top-right">{THEMES.map((t) => (<button key={t.id} onClick={() => { setTheme(t.id); setShowThemeMenu(false); }} className={`w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-slate-50 ${theme === t.id ? 'text-indigo-600 bg-indigo-50' : 'text-slate-700'}`}><span className={`w-3 h-3 rounded-full shadow-sm border border-black/10 ${t.color}`}></span>{t.label.split(' (')[0]}{theme === t.id && <Check className="w-3 h-3 ml-auto" />}</button>))}</div>}
             </div>
-            <div className="bg-white/90 backdrop-blur shadow-sm border border-slate-200 rounded-lg p-1 flex items-center gap-0.5 md:gap-1 pointer-events-auto">
+            <div className="bg-white/90 backdrop-blur shadow-sm border border-slate-200 rounded-lg p-1 hidden md:flex items-center gap-0.5 md:gap-1 pointer-events-auto">
               <button onClick={() => setScale(s => Math.max(0.1, s - 0.1))} className="w-7 h-8 md:w-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded">-</button>
               <div className="w-14 relative hidden md:flex items-center justify-center"><input type="text" value={zoomInput} onChange={(e) => setZoomInput(e.target.value)} onBlur={handleZoomCommit} onKeyDown={(e) => e.key === 'Enter' && handleZoomCommit()} className="w-full text-center text-xs font-medium text-slate-600 bg-transparent focus:outline-none focus:bg-slate-50 rounded px-1 py-0.5" /><span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none">%</span></div>
               <button onClick={() => setScale(s => Math.min(5, s + 0.1))} className="w-7 h-8 md:w-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded">+</button>
