@@ -443,6 +443,7 @@ function MainApp({ user, onLogout }) {
   // Mobile View State
   const [isMobilePreview, setIsMobilePreview] = useState(false);
   const containerRef = useRef(null);
+  const canvasRef = useRef(null);
   const mermaidRef = useRef(null);
 
   // Touch Handling Ref
@@ -797,6 +798,26 @@ function MainApp({ user, onLogout }) {
   };
 
   const handleCanvasTouchEnd = () => setIsPanDragging(false);
+
+  // Add non-passive touch event listeners
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const onTouchStart = (e) => handleCanvasTouchStart(e);
+    const onTouchMove = (e) => handleCanvasTouchMove(e);
+    const onTouchEnd = (e) => handleCanvasTouchEnd(e);
+
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove', onTouchMove);
+      canvas.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isPanningTool, isPanDragging]);
 
   // Wheel Zoom Logic
   // Wheel Zoom Logic (Native Event Handler for better control)
@@ -1516,8 +1537,8 @@ function MainApp({ user, onLogout }) {
           </div>
 
           <div
+            ref={canvasRef}
             onMouseDown={handleCanvasMouseDown} onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp} onMouseLeave={handleCanvasMouseLeave}
-            onTouchStart={handleCanvasTouchStart} onTouchMove={handleCanvasTouchMove} onTouchEnd={handleCanvasTouchEnd}
             style={{ touchAction: isPanningTool ? 'none' : 'auto' }}
             className={`flex-1 overflow-auto transition-colors duration-300 ${theme === 'dark' ? 'bg-slate-900' : 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] bg-slate-50'} relative ${isPanningTool ? (isPanDragging ? 'cursor-grabbing' : 'cursor-grab') : ''}`}
           >
