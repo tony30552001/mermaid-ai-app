@@ -246,7 +246,7 @@ function SignInButton({ onGoogleLoginSuccess }) {
         <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
           <Wand2 className="w-8 h-8 text-indigo-600" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Mermaid AI Architect</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Mermaid Flow</h1>
         <p className="text-slate-500 mb-8">請登入以使用 AI 圖表生成工具</p>
 
         <div className="space-y-3">
@@ -1742,7 +1742,17 @@ function MainApp({ user, onLogout }) {
 export default function App() {
   const isMsalAuthenticated = useIsAuthenticated();
   const { accounts } = useMsal();
-  const [googleUser, setGoogleUser] = useState(null);
+
+  // Initialize googleUser from localStorage
+  const [googleUser, setGoogleUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('googleUser');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.error("Failed to parse googleUser from localStorage", e);
+      return null;
+    }
+  });
 
   // Unified User State
   const [currentUser, setCurrentUser] = useState(null);
@@ -1763,10 +1773,14 @@ export default function App() {
 
   const handleGoogleLoginSuccess = (user) => {
     setGoogleUser(user);
-    // You might want to persist this to localStorage for persistence across reloads
+    localStorage.setItem('googleUser', JSON.stringify(user));
   };
 
   const handleLogout = () => {
+    if (googleUser) {
+      localStorage.removeItem('googleUser');
+      googleLogout(); // Ensure Google logout is called
+    }
     setGoogleUser(null);
     setCurrentUser(null);
   };

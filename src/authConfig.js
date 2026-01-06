@@ -18,8 +18,8 @@ export const msalConfig = {
         redirectUri: window.location.origin + "/",
     },
     cache: {
-        cacheLocation: "sessionStorage", // This configures where your cache will be stored
-        storeAuthStateInCookie: false, // Set this to "true" if you are having issues on IE11 or Edge
+        cacheLocation: "localStorage", // Changed to localStorage for better persistence
+        storeAuthStateInCookie: true, // Set to true for Safari/IE issues
     },
     system: {
         loggerOptions: {
