@@ -1526,7 +1526,7 @@ function MainApp({ user, onLogout }) {
             bg-slate-100 relative overflow-hidden flex-col h-full transition-all duration-300
             ${isFullscreen
               ? 'fixed inset-0 z-50 flex'
-              : `md:w-2/3 ${isMobilePreview ? 'flex w-full fixed inset-0 z-20 md:static md:z-auto' : 'hidden md:flex'}`
+              : `md:w-2/3 ${isMobilePreview ? 'flex flex-1 w-full bg-slate-50' : 'hidden md:flex'}`
             }
           `}
           id="print-container"
