@@ -444,6 +444,10 @@ function MainApp({ user, onLogout }) {
   const [isMobilePreview, setIsMobilePreview] = useState(false);
   const containerRef = useRef(null);
   const mermaidRef = useRef(null);
+
+  // Touch Handling Ref
+  const lastTouchRef = useRef({ x: 0, y: 0 });
+
   useEffect(() => {
     const script = document.createElement('script');
     // 更新為 11.4.0 以支援 architecture-beta
@@ -765,6 +769,34 @@ function MainApp({ user, onLogout }) {
   const handleCanvasMouseMove = (e) => { if (isPanDragging) setPan(p => ({ x: p.x + e.movementX, y: p.y + e.movementY })); };
   const handleCanvasMouseUp = () => setIsPanDragging(false);
   const handleCanvasMouseLeave = () => setIsPanDragging(false);
+
+  // Touch Handlers for Mobile Panning
+  const handleCanvasTouchStart = (e) => {
+    if (isPanningTool && e.touches.length === 1) {
+      setIsPanDragging(true);
+      lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const handleCanvasTouchMove = (e) => {
+    if (isPanDragging && e.touches.length === 1) {
+      // 嘗試阻止預設滾動行為，讓畫布可以拖曳
+      // 注意：某些瀏覽器可能將 touchmove 視為 passive，此時 e.preventDefault() 無效，
+      // 但在 React 18+ 合成事件中通常可以用。
+      // 如果無效，可能需要透過 ref addEventListener 來綁定非 passive 監聽器。
+      // 這裡先嘗試直接使用。
+      if (e.cancelable) e.preventDefault();
+
+      const touch = e.touches[0];
+      const dx = touch.clientX - lastTouchRef.current.x;
+      const dy = touch.clientY - lastTouchRef.current.y;
+
+      setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+      lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+    }
+  };
+
+  const handleCanvasTouchEnd = () => setIsPanDragging(false);
 
   // Wheel Zoom Logic
   // Wheel Zoom Logic (Native Event Handler for better control)
@@ -1485,6 +1517,8 @@ function MainApp({ user, onLogout }) {
 
           <div
             onMouseDown={handleCanvasMouseDown} onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp} onMouseLeave={handleCanvasMouseLeave}
+            onTouchStart={handleCanvasTouchStart} onTouchMove={handleCanvasTouchMove} onTouchEnd={handleCanvasTouchEnd}
+            style={{ touchAction: isPanningTool ? 'none' : 'auto' }}
             className={`flex-1 overflow-auto transition-colors duration-300 ${theme === 'dark' ? 'bg-slate-900' : 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] bg-slate-50'} relative ${isPanningTool ? (isPanDragging ? 'cursor-grabbing' : 'cursor-grab') : ''}`}
           >
             {isAiEditing && <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-40 flex flex-col items-center justify-center text-indigo-600 pointer-events-none"><Loader2 className="w-10 h-10 animate-spin mb-2" /><span className="font-semibold animate-pulse">AI 正在調整架構中...</span></div>}
