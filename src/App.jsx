@@ -1057,7 +1057,7 @@ function MainApp({ user, onLogout }) {
       to: '',
       cc: '',
       subject: `【Mermaid 圖表分享】${title}`,
-      body: `您好，\n\n${senderName} 想與您分享一份 Mermaid 圖表。\n\n圖表已自動下載為 JPG 附件，請確認已附加至此郵件。\n\n---\n寄件人：${senderName}${senderEmail ? ` <${senderEmail}>` : ''}\n\n---\nMermaid 語法：\n${mermaidCode}\n\n此郵件由 Mermaid AI 工具生成`
+      body: `您好，\n\n${senderName} 想與您分享一份 Mermaid 圖表。\n\n圖表已自動下載為 JPG 附件，請確認已附加至此郵件。\n\n---\n寄件人：${senderName}${senderEmail ? ` <${senderEmail}>` : ''}\n\n---\nMermaid 語法：\n${mermaidCode}\n\n此郵件由 Mermaid Flow 工具生成`
     });
     setShowShareModal(true);
   };
@@ -1159,7 +1159,7 @@ function MainApp({ user, onLogout }) {
       <header id="main-header" className="bg-white border-b border-slate-200 px-4 md:px-6 py-3 flex items-center justify-between shadow-sm flex-shrink-0 z-20">
         <div className="flex items-center gap-2">
           <div className="bg-indigo-600 p-1.5 md:p-2 rounded-lg"><Wand2 className="w-5 h-5 text-white" /></div>
-          <h1 className="text-base md:text-lg font-bold text-slate-900 tracking-tight">Mermaid AI</h1>
+          <h1 className="text-base md:text-lg font-bold text-slate-900 tracking-tight">Mermaid Flow</h1>
         </div>
         <div className="flex items-center gap-4">
           <a href="https://mermaid.js.org/intro/" target="_blank" rel="noreferrer" className="text-sm text-indigo-600 hover:underline hidden md:block">語法參考</a>
