@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2, LogIn, LogOut, Maximize2, Minimize2, Save, FolderOpen, Edit2 } from 'lucide-react';
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { loginRequest } from "./authConfig";
@@ -774,73 +774,130 @@ function MainApp({ user, onLogout }) {
     const svgEl = mermaidRef.current.querySelector('svg');
     if (!svgEl) return;
 
-    try {
-      // 1. Get exact content bounds
-      const bbox = svgEl.getBBox();
-      const w = bbox.width;
-      const h = bbox.height;
+    // Helper: 將 Unicode SVG 字串轉為 Blob URL (避免 btoa 的 Latin-1 限制)
+    const svgToDataUrl = (svgString) => {
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      return URL.createObjectURL(blob);
+    };
 
-      // 2. Clone and configure SVG for export
-      const cloned = svgEl.cloneNode(true);
-
-      // Critical: Set viewBox to match content bounds to ensure no cropping
-      cloned.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
-      cloned.setAttribute('width', w);
-      cloned.setAttribute('height', h);
-
-      // Apply theme background
-      const bgColor = theme === 'dark' ? '#0f172a' : '#ffffff';
-      cloned.style.backgroundColor = bgColor;
-
-      // 3. Convert to Blob URL
-      const svgStr = new XMLSerializer().serializeToString(cloned);
-      const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-
-      // 4. Draw to Canvas
-      const img = new Image();
-      img.onload = () => {
+    // Helper to perform the actual export with a specific scale
+    const exportWithScale = (scaleToUse) => {
+      return new Promise((resolve, reject) => {
+        let blobUrl = null;
         try {
-          const scale = 2; // Export at 2x resolution
-          const cvs = document.createElement('canvas');
-          cvs.width = Math.ceil(w * scale);
-          cvs.height = Math.ceil(h * scale);
-          const ctx = cvs.getContext('2d');
+          // 1. Get bounds and clone
+          const bbox = svgEl.getBBox();
+          const w = bbox.width;
+          const h = bbox.height;
 
-          // Fill Background
-          ctx.fillStyle = bgColor;
-          ctx.fillRect(0, 0, cvs.width, cvs.height);
+          // 檢查 Canvas 大小限制 (大多數瀏覽器限制約 16384 或更小)
+          const maxCanvasSize = 16384;
+          const targetWidth = Math.ceil(w * scaleToUse);
+          const targetHeight = Math.ceil(h * scaleToUse);
 
-          // Draw Image
-          ctx.drawImage(img, 0, 0, cvs.width, cvs.height);
+          if (targetWidth > maxCanvasSize || targetHeight > maxCanvasSize) {
+            reject(new Error(`圖表尺寸過大 (${targetWidth}x${targetHeight})，超過瀏覽器限制`));
+            return;
+          }
 
-          // Download
-          const a = document.createElement('a');
-          a.href = cvs.toDataURL(`image/${fmt}`, 0.9);
-          a.download = `mermaid-diagram-${Date.now()}.${fmt}`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          setShowExportMenu(false);
-        } catch (err) {
-          console.error('Canvas export error:', err);
-          alert('匯出失敗，可能是瀏覽器安全性限制或圖表過大。');
-        } finally {
-          URL.revokeObjectURL(url);
+          const cloned = svgEl.cloneNode(true);
+          cloned.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+          cloned.setAttribute('width', w);
+          cloned.setAttribute('height', h);
+          // 移除可能造成問題的屬性
+          cloned.removeAttribute('style');
+          cloned.removeAttribute('class');
+
+          const bgColor = theme === 'dark' ? '#0f172a' : '#ffffff';
+
+          // 在 SVG 中加入背景 rect
+          const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          bgRect.setAttribute('x', bbox.x);
+          bgRect.setAttribute('y', bbox.y);
+          bgRect.setAttribute('width', bbox.width);
+          bgRect.setAttribute('height', bbox.height);
+          bgRect.setAttribute('fill', bgColor);
+          cloned.insertBefore(bgRect, cloned.firstChild);
+
+          // 2. Serialize and create Blob URL (避免 btoa 的 Unicode 問題)
+          const svgStr = new XMLSerializer().serializeToString(cloned);
+          blobUrl = svgToDataUrl(svgStr);
+
+          // 3. Load Image
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+
+          img.onload = () => {
+            try {
+              const cvs = document.createElement('canvas');
+              cvs.width = targetWidth;
+              cvs.height = targetHeight;
+              const ctx = cvs.getContext('2d');
+
+              if (!ctx) {
+                throw new Error('無法建立 Canvas context');
+              }
+
+              // Fill Background (雙重保險)
+              ctx.fillStyle = bgColor;
+              ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+              // Draw
+              ctx.drawImage(img, 0, 0, cvs.width, cvs.height);
+
+              // Export using toBlob for better memory handling
+              cvs.toBlob((blob) => {
+                if (!blob) {
+                  reject(new Error('Canvas toBlob 失敗'));
+                  return;
+                }
+                const downloadUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `mermaid-diagram-${Date.now()}.${fmt}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(downloadUrl);
+                resolve();
+              }, `image/${fmt === 'jpg' ? 'jpeg' : fmt}`, 0.95);
+
+            } catch (err) {
+              reject(err);
+            } finally {
+              if (blobUrl) URL.revokeObjectURL(blobUrl);
+            }
+          };
+
+          img.onerror = () => {
+            if (blobUrl) URL.revokeObjectURL(blobUrl);
+            reject(new Error('圖片載入失敗 - 可能存在安全限制'));
+          };
+
+          img.src = blobUrl;
+        } catch (e) {
+          if (blobUrl) URL.revokeObjectURL(blobUrl);
+          reject(e);
         }
-      };
+      });
+    };
 
-      img.onerror = (e) => {
-        console.error('Image load error:', e);
-        URL.revokeObjectURL(url);
-        alert('圖片轉換失敗。');
-      };
+    // Retry Logic: Try 2x first, then 1x, then 0.5x
+    setShowExportMenu(false); // 立即關閉選單以提供即時回饋
 
-      img.src = url;
-    } catch (e) {
-      console.error('Export setup error:', e);
-      alert('準備匯出時發生錯誤。');
-    }
+    exportWithScale(2)
+      .catch((err) => {
+        console.warn('Export at 2x failed, retrying at 1x...', err.message);
+        return exportWithScale(1);
+      })
+      .catch((err) => {
+        console.warn('Export at 1x failed, retrying at 0.5x...', err.message);
+        return exportWithScale(0.5);
+      })
+      .catch((finalErr) => {
+        console.error('Final Export Error:', finalErr);
+        alert(`匯出失敗：${finalErr.message}\n\n建議方案：\n1. 嘗試下載 SVG 格式（無限制）\n2. 使用瀏覽器截圖功能\n3. 縮小圖表後重試`);
+      });
   };
   const copyToClipboard = () => { const ta = document.createElement("textarea"); ta.value = mermaidCode; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); };
 
