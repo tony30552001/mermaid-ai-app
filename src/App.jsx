@@ -1339,7 +1339,7 @@ function MainApp({ user, onLogout }) {
           id="main-sidebar"
           className={`
             md:w-1/3 flex flex-col border-r border-slate-200 bg-white shadow-lg z-30
-            fixed md:relative inset-0 md:inset-auto h-full transition-transform duration-300 ease-in-out
+            absolute md:relative inset-0 md:inset-auto h-full transition-transform duration-300 ease-in-out
             ${isFullscreen ? 'md:hidden' : ''}
             ${isMobilePreview ? 'hidden md:flex' : 'flex w-full'}
           `}
