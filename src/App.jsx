@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
-import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2, LogIn, LogOut, Maximize2, Minimize2, Save, FolderOpen, Edit2, Eye } from 'lucide-react';
+import { Play, PenTool, AlertTriangle, Wand2, Download, Copy, Check, RotateCcw, Loader2, Code, MessageSquarePlus, ChevronDown, ChevronRight, FileImage, FileCode, Sparkles, Link, ArrowRightLeft, MousePointerClick, X, Share2, Box, GitCommit, Database, BarChart, BrainCircuit, Map, PieChart, Clock, Layout, Palette, Layers, Target, Hand, Image as ImageIcon, Upload, Trash2, LogIn, LogOut, Maximize2, Minimize2, Save, FolderOpen, Edit2, Eye, Search } from 'lucide-react';
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { loginRequest } from "./authConfig";
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
@@ -474,6 +474,12 @@ function MainApp({ user, onLogout }) {
 
   // 工作區狀態 (Firestore)
   const [savedDiagrams, setSavedDiagrams] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredDiagrams = savedDiagrams.filter(diagram =>
+    (diagram.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (diagram.code?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+  );
 
   useEffect(() => {
     // 取得使用者識別碼 (Email 或 Username)
@@ -509,7 +515,21 @@ function MainApp({ user, onLogout }) {
 
   const saveToWorkspace = async (e) => {
     e?.preventDefault();
-    const name = window.prompt("請為此圖表命名：", `未命名圖表 ${new Date().toLocaleDateString()}`);
+
+    // Auto-generate title using AI
+    let defaultName = `未命名圖表 ${new Date().toLocaleDateString()}`;
+    try {
+      if (mermaidCode.trim()) {
+        const aiTitle = await generateDiagramTitle();
+        if (aiTitle && aiTitle !== 'mermaid-diagram') {
+          defaultName = aiTitle;
+        }
+      }
+    } catch (err) {
+      console.warn("Title generation failed, using default", err);
+    }
+
+    const name = window.prompt("請為此圖表命名：", defaultName);
     if (name) {
       const userId = user?.username || user?.email;
       if (!userId) {
@@ -1624,7 +1644,19 @@ function MainApp({ user, onLogout }) {
             <div className={`absolute inset-0 flex flex-col p-4 pb-24 md:pb-4 transition-opacity duration-200 overflow-y-auto ${activeTab === 'workspace' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
               <div className="mb-4">
                 <h3 className="text-lg font-bold text-slate-800 mb-1">我的工作區</h3>
-                <p className="text-sm text-slate-500">儲存並管理您的 Mermaid圖表</p>
+                <p className="text-sm text-slate-500 mb-3">儲存並管理您的 Mermaid圖表</p>
+
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="搜尋圖表名稱或內容..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
               </div>
 
               {savedDiagrams.length === 0 ? (
@@ -1633,9 +1665,15 @@ function MainApp({ user, onLogout }) {
                   <p className="text-sm">目前沒有儲存的圖表</p>
                   <button onClick={() => setActiveTab('edit')} className="mt-4 text-indigo-600 text-sm hover:underline">去儲存目前的圖表</button>
                 </div>
+              ) : filteredDiagrams.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8">
+                  <Search className="w-12 h-12 mb-2 opacity-30" />
+                  <p className="text-sm">找不到符合 "{searchTerm}" 的圖表</p>
+                  <button onClick={() => setSearchTerm('')} className="mt-2 text-indigo-600 text-sm hover:underline">清除搜尋</button>
+                </div>
               ) : (
                 <div className="grid gap-3">
-                  {savedDiagrams.map((diagram) => {
+                  {filteredDiagrams.map((diagram) => {
                     const TypeIcon = DIAGRAM_TYPES.find(t => t.id === diagram.type)?.icon || FileCode;
                     return (
                       <div key={diagram.id} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow group relative">
