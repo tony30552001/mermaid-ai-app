@@ -4,6 +4,8 @@ import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { loginRequest } from "./authConfig";
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
+import { db } from './firebaseConfig';
+import { collection, addDoc, query, where, onSnapshot, deleteDoc, doc, updateDoc, orderBy, serverTimestamp } from 'firebase/firestore';
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 const aiModel = import.meta.env.VITE_GEMINI_MODEL || "gemini-1.5-flash";
@@ -470,39 +472,65 @@ function MainApp({ user, onLogout }) {
   const [editInstruction, setEditInstruction] = useState('');
   const [isAiEditing, setIsAiEditing] = useState(false);
 
-  // 工作區狀態 (Workspace)
+  // 工作區狀態 (Firestore)
   const [savedDiagrams, setSavedDiagrams] = useState([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('mermaid_workspace');
-    if (saved) {
-      try {
-        setSavedDiagrams(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse workspace data", e);
-      }
-    }
-  }, []);
+    // 取得使用者識別碼 (Email 或 Username)
+    const userId = user?.username || user?.email; // 優先使用 username (MSAL), 其次 email (Google)
 
-  const saveToWorkspace = (e) => {
-    e?.preventDefault(); // 防止可能的表單提交或頁面重整
+    if (!userId) {
+      setSavedDiagrams([]);
+      return;
+    }
+
+    // 訂閱 Firestore 資料變更
+    // 注意：若尚未建立索引，orderBy 可能導致錯誤。若有錯誤請檢查 Console。
+    const q = query(
+      collection(db, "diagrams"),
+      where("userId", "==", userId)
+      // orderBy("updatedAt", "desc") 
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const diagrams = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      // 客戶端排序 (避免索引問題)
+      diagrams.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      setSavedDiagrams(diagrams);
+    }, (error) => {
+      console.error("讀取圖表失敗:", error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const saveToWorkspace = async (e) => {
+    e?.preventDefault();
     const name = window.prompt("請為此圖表命名：", `未命名圖表 ${new Date().toLocaleDateString()}`);
     if (name) {
-      const newDiagram = {
-        id: Date.now(),
-        name,
-        code: mermaidCode,
-        type: diagramType,
-        updatedAt: new Date().toISOString()
-      };
+      const userId = user?.username || user?.email;
+      if (!userId) {
+        alert("請先登入以儲存圖表");
+        return;
+      }
 
-      setSavedDiagrams(prev => {
-        const newSaved = [newDiagram, ...prev];
-        localStorage.setItem('mermaid_workspace', JSON.stringify(newSaved));
-        return newSaved;
-      });
-
-      setActiveTab('workspace'); // Auto switch to workspace
+      try {
+        await addDoc(collection(db, "diagrams"), {
+          userId,
+          name,
+          code: mermaidCode,
+          type: diagramType,
+          updatedAt: new Date().toISOString()
+        });
+        // 不需手動 setSavedDiagrams，onSnapshot 會自動更新
+        setActiveTab('workspace');
+      } catch (error) {
+        console.error("儲存失敗:", error);
+        alert("儲存失敗，請稍後再試");
+      }
     }
   };
 
@@ -517,22 +545,28 @@ function MainApp({ user, onLogout }) {
     }
   };
 
-  const deleteFromWorkspace = (id) => {
+  const deleteFromWorkspace = async (id) => {
     if (window.confirm("確定要刪除此圖表嗎？此動作無法復原。")) {
-      const newSaved = savedDiagrams.filter(d => d.id !== id);
-      setSavedDiagrams(newSaved);
-      localStorage.setItem('mermaid_workspace', JSON.stringify(newSaved));
+      try {
+        await deleteDoc(doc(db, "diagrams", id));
+      } catch (error) {
+        console.error("刪除失敗:", error);
+        alert("刪除失敗");
+      }
     }
   };
 
-  const renameInWorkspace = (id, oldName) => {
+  const renameInWorkspace = async (id, oldName) => {
     const newName = window.prompt("請輸入新的圖表名稱：", oldName);
     if (newName && newName !== oldName) {
-      setSavedDiagrams(prev => {
-        const newSaved = prev.map(d => d.id === id ? { ...d, name: newName, updatedAt: new Date().toISOString() } : d);
-        localStorage.setItem('mermaid_workspace', JSON.stringify(newSaved));
-        return newSaved;
-      });
+      try {
+        await updateDoc(doc(db, "diagrams", id), {
+          name: newName,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error("重新命名失敗:", error);
+      }
     }
   };
 
