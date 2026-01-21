@@ -811,6 +811,59 @@ function MainApp({ user, onLogout }) {
     }
   };
 
+  // --- AI 需求分析 ---
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [showAnalysisConfirm, setShowAnalysisConfirm] = useState(false);
+
+  const analyzeRequest = async () => {
+    if (!prompt.trim()) return;
+    setIsAnalyzing(true);
+    setRenderError(null);
+
+    const systemPrompt = `你是一個專業的系統分析師。請分析使用者的需求，並建議最適合的 Mermaid 圖表類型。
+    
+    你的任務：
+    1. 仔細閱讀使用者的描述。
+    2. 決定最合適的圖表類型 (從以下選擇: ${DIAGRAM_TYPES.map(t => t.id).join(', ')}).
+    3. 整理並優化使用者的需求描述，使其更清晰、結構化，適合生成圖表。
+    4. 回傳 JSON 格式：
+       {
+         "recommendedType": "圖表類型ID",
+         "reason": "選擇原因簡述",
+         "refinedRequirements": "整理後的詳細需求描述"
+       }
+    `;
+
+    try {
+      const resultText = await callGemini(systemPrompt, prompt);
+
+      // Clean up markdown code blocks if present
+      const jsonStr = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const result = JSON.parse(jsonStr);
+
+      setAnalysisResult(result);
+      setShowAnalysisConfirm(true);
+
+    } catch (e) {
+      console.error("AI 分析失敗:", e);
+      // Fallback to direct generation if analysis fails
+      handleDirectGenerate();
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleConfirmGenerate = () => {
+    if (analysisResult) {
+      setDiagramType(analysisResult.recommendedType);
+      setPrompt(analysisResult.refinedRequirements);
+      setShowAnalysisConfirm(false);
+      // Trigger actual generation with updated values
+      setTimeout(() => handleDirectGenerate(analysisResult.refinedRequirements, analysisResult.recommendedType), 100);
+    }
+  };
+
   // --- 重設功能 ---
   const handleReset = () => {
     if (window.confirm('確定要清空所有內容並重新開始嗎？目前的描述與圖片將會被移除。')) {
@@ -828,13 +881,12 @@ function MainApp({ user, onLogout }) {
     }
   };
 
-  // --- 生成圖表 ---
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+  // --- 生成圖表 (Core Logic) ---
+  const handleDirectGenerate = async (finalPrompt = prompt, finalType = diagramType) => {
     setIsGenerating(true);
     setRenderError(null);
 
-    const selectedTypeInfo = DIAGRAM_TYPES.find(t => t.id === diagramType) || DIAGRAM_TYPES[0];
+    const selectedTypeInfo = DIAGRAM_TYPES.find(t => t.id === finalType) || DIAGRAM_TYPES[0];
     const systemPrompt = `你是一個精通 Mermaid.js 的圖表專家。請根據使用者的描述，生成有效的 Mermaid 語法代碼。
     
     規則：
@@ -848,17 +900,17 @@ function MainApp({ user, onLogout }) {
     8. 若是心智圖(mindmap)或甘特圖(gantt)，請確保縮排格式正確。`;
 
     try {
-      let code = await callGemini(systemPrompt, prompt);
+      let code = await callGemini(systemPrompt, finalPrompt);
       code = code.replace(/```mermaid/g, '').replace(/```/g, '').trim();
       setMermaidCode(code);
       setActiveTab('edit');
 
-      if (['flowchart', 'er', 'class', 'architecture', 'quadrant'].includes(diagramType)) {
+      if (['flowchart', 'er', 'class', 'architecture', 'quadrant'].includes(finalType)) {
         setScale(1);
-      } else if (['timeline', 'gantt'].includes(diagramType)) {
+      } else if (['timeline', 'gantt'].includes(finalType)) {
         setScale(3);
       } else {
-        setScale(2);
+        setScale(1);
       }
       setPan({ x: 0, y: 0 });
 
@@ -870,6 +922,11 @@ function MainApp({ user, onLogout }) {
       // Mobile: Switch to preview after generation
       if (window.innerWidth < 768) setIsMobilePreview(true);
     }
+  };
+
+  // Wrapper for button click
+  const handleGenerate = () => {
+    analyzeRequest();
   };
 
   const handleFix = async () => {
@@ -1393,6 +1450,86 @@ function MainApp({ user, onLogout }) {
 
   return (
     <div className={`flex flex-col h-screen ${theme === 'dark' ? 'dark bg-slate-900' : 'bg-slate-50'} transition-colors duration-300 font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-700`}>
+
+      {/* Analysis Confirmation Overlay */}
+      {showAnalysisConfirm && analysisResult && (
+        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full mx-4 border border-indigo-100 flex flex-col gap-4 max-h-[90vh]">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="bg-indigo-100 p-2 rounded-lg">
+                <BrainCircuit className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">AI 需求分析建議</h3>
+                <p className="text-sm text-slate-500">已為您優化需求並推薦圖表類型</p>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto pr-2 space-y-4">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-indigo-500" /> 推薦類型
+                </h4>
+                <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-bold text-indigo-700">
+                      {DIAGRAM_TYPES.find(t => t.id === analysisResult.recommendedType)?.label || analysisResult.recommendedType}
+                    </span>
+                    {analysisResult.recommendedType !== diagramType && (
+                      <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                        原選: {DIAGRAM_TYPES.find(t => t.id === diagramType)?.label.split('(')[0]}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-indigo-600/80 leading-relaxed">
+                    {analysisResult.reason}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <FileCode className="w-4 h-4 text-indigo-500" /> 整理後需求 (可編輯)
+                </h4>
+                <textarea
+                  value={analysisResult.refinedRequirements}
+                  onChange={(e) => setAnalysisResult({ ...analysisResult, refinedRequirements: e.target.value })}
+                  className="w-full h-32 p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50 leading-relaxed resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setShowAnalysisConfirm(false)}
+                className="flex-1 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleConfirmGenerate}
+                className="flex-1 py-2.5 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" /> 確認並生成
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analyzing Loader Overlay */}
+      {isAnalyzing && (
+        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-xl p-8 flex flex-col items-center">
+            <div className="relative mb-4">
+              <BrainCircuit className="w-12 h-12 text-indigo-200" />
+              <Loader2 className="w-12 h-12 text-indigo-600 animate-spin absolute inset-0" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">AI 正在分析需求...</h3>
+            <p className="text-sm text-slate-500 mt-2">判斷最佳圖表類型並優化描述</p>
+          </div>
+        </div>
+      )}
 
       {/* Saving Overlay */}
       {saveStatus !== 'idle' && (
