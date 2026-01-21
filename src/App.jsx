@@ -1998,7 +1998,7 @@ return (
     {/* Mobile Floating Action Button removed based on user feedback */}
   </div>
 );
-}
+
 
 export default function App() {
   const isMsalAuthenticated = useIsAuthenticated();
