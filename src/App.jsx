@@ -1453,14 +1453,14 @@ function MainApp({ user, onLogout }) {
 
       {/* Analysis Confirmation Overlay */}
       {showAnalysisConfirm && analysisResult && (
-        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full mx-4 border border-indigo-100 flex flex-col gap-4 max-h-[90vh]">
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-              <div className="bg-indigo-100 p-2 rounded-lg">
-                <BrainCircuit className="w-6 h-6 text-indigo-600" />
+        <div className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center animate-in fade-in p-4">
+          <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 max-w-2xl w-full border border-white/50 flex flex-col gap-6 max-h-[90vh] ring-1 ring-black/5">
+            <div className="flex items-center gap-4 border-b border-slate-200/50 pb-4">
+              <div className="bg-indigo-100/80 p-3 rounded-xl backdrop-blur-sm">
+                <BrainCircuit className="w-7 h-7 text-indigo-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-800">AI 需求分析建議</h3>
+                <h3 className="text-xl font-bold text-slate-800">AI 需求分析建議</h3>
                 <p className="text-sm text-slate-500">已為您優化需求並推薦圖表類型</p>
               </div>
             </div>
