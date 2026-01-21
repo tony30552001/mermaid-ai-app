@@ -1113,10 +1113,13 @@ function MainApp({ user, onLogout }) {
           cloned.insertBefore(bgRect, cloned.firstChild);
 
           // 移除可能造成跨域問題的元素
-          const foreignObjects = cloned.querySelectorAll('foreignObject');
-          foreignObjects.forEach(fo => fo.remove());
+          // 修改：暫時保留 foreignObject 以修復文字消失問題
+          // const foreignObjects = cloned.querySelectorAll('foreignObject');
+          // foreignObjects.forEach(fo => fo.remove());
 
           // 移除外部圖片引用
+          // 修改：暫時保留圖片，若有跨域問題再處理
+          /*
           const images = cloned.querySelectorAll('image');
           images.forEach(img => {
             const href = img.getAttribute('href') || img.getAttribute('xlink:href');
@@ -1124,6 +1127,7 @@ function MainApp({ user, onLogout }) {
               img.remove();
             }
           });
+          */
 
           // 內嵌必要的字體樣式
           const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
