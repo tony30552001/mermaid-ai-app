@@ -1462,8 +1462,7 @@ function MainApp({ user, onLogout }) {
           className={`
             md:w-1/3 flex flex-col border-r border-slate-200 bg-white shadow-lg z-30
             absolute md:relative inset-0 md:inset-auto h-full transition-transform duration-300 ease-in-out
-            ${isFullscreen ? 'md:hidden' : ''}
-            ${isMobilePreview ? 'hidden md:flex' : 'flex w-full'}
+            ${isFullscreen ? 'hidden' : (isMobilePreview ? 'hidden md:flex' : 'flex w-full')}
           `}
         >
           <div className="flex border-b border-slate-200 bg-slate-50/50">
@@ -1784,9 +1783,9 @@ function MainApp({ user, onLogout }) {
         {/* Right Panel: Preview */}
         <div
           className={`
-            bg-slate-100 relative overflow-hidden flex-col h-full transition-all duration-300
+            bg-slate-100 relative overflow-hidden flex-col h-full
             ${isFullscreen
-              ? 'fixed inset-0 z-50 flex'
+              ? 'fixed inset-0 w-screen h-screen z-50 flex'
               : `md:w-2/3 ${isMobilePreview ? 'flex flex-1 w-full bg-slate-50' : 'hidden md:flex'}`
             }
           `}
